@@ -60,6 +60,10 @@ class Event(object):
     """
 
     def __init__(self):
+        """
+
+        :type self: object
+        """
         self._consumers = {None: set()}
 
     def subscribe(self, consumer, model_names=None, replacing=None):
