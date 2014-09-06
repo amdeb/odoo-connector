@@ -89,6 +89,7 @@ class test_event(common.TransactionCase):
         @self.event
         def set_message(session, model_name, recipient, message):
             recipient.set_message(message)
+
         recipient = Recipient()
         # an event is fired on a model name
         session = mock.Mock()

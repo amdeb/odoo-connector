@@ -120,7 +120,7 @@ class Event(object):
 
         args = tuple([session, model_name] + list(args))
         for name in (None, model_name):
-            for consumer in self._consumers_for(session, name):
+            for consumer in self._consumers.get(name, set()):
                 consumer(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
