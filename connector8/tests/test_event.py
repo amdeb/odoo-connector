@@ -5,6 +5,7 @@ import mock
 import openerp.tests.common as common
 from ..event import Event
 
+
 class test_event(common.TransactionCase):
     """ Test Event """
 
