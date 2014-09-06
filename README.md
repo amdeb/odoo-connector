@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/amdeb/connector.svg)](https://travis-ci.org/amdeb/connector)
+[![Coverage Status](https://coveralls.io/repos/amdeb/connector/badge.png)](https://coveralls.io/r/amdeb/connector)
+
 odoo-connector
 ==============
 
