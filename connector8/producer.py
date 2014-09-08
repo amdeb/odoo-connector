@@ -21,8 +21,9 @@ def create(self, values):
     """
 
     _logger.info("in new create")
+    _logger.debug("in new create debug message")
     record = self.browse(create_original(self, values))
-    _logger.info("Created record id: {0}".format(record))
+    _logger.info("Created record values: {0}".format(record))
 
     return record
 
