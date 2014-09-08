@@ -13,5 +13,4 @@ This is a port of OCA connector to Odoo 8.0
              ],
  'data': [],
  'installable': True,
- 'application': True,
  }
