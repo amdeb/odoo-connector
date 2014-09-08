@@ -7,7 +7,6 @@ from openerp import models, api
 _logger = logging.getLogger(__name__)
 create_original = models.BaseModel.create
 
-_logger.info("module name: {0}".format(__name__))
 
 @api.model
 @api.returns('self', lambda value: value.id)
