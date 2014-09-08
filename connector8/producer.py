@@ -14,7 +14,7 @@ def create(self, values):
     """Creates a new record and log the record id and values
 
     :param self: model self
-    :param values: record value
+    :param values: record values
     :return: record id
     :rtype : str
     """
@@ -26,6 +26,3 @@ def create(self, values):
     return record_id
 
 models.BaseModel.create = create
-
-
-
