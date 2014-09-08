@@ -7,6 +7,7 @@ from openerp import models, api
 _logger = logging.getLogger(__name__)
 create_original = models.BaseModel.create
 
+_logger.info("module name: %s".format(__name__))
 
 @api.model
 @api.returns('self', lambda value: value.id)
@@ -22,8 +23,8 @@ def create(self, values):
     _logger.info("in new create")
     record_id = create_original(self, values)
     record = self.browser(record_id)
-    _logger.info("Created record id: %".format(record_id))
-    _logger.info("Created record id: %".format(record))
+    #_logger.info("Created record id: %s".format(record_id))
+    #_logger.info("Created record id: %s".format(record))
 
     return record_id
 
