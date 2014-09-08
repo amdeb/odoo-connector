@@ -19,9 +19,11 @@ def create(self, values):
     :rtype : str
     """
 
+    _logger.info("in new create")
     record_id = create_original(self, values)
     record = self.browser(record_id)
-    _logger.info("Created record id: %s, value: %s".format(record_id, record))
+    _logger.info("Created record id: %".format(record_id))
+    _logger.info("Created record id: %".format(record))
 
     return record_id
 
