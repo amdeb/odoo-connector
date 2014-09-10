@@ -98,9 +98,9 @@ class Event(object):
         """ Return True if at least one consumer is registered
         for the model.
         """
-        if len(self._consumers.get(None, set())) > 0:
+        if self._consumers.get(None, set()):
             return True  # at least 1 global consumer exist
-        return len(self._consumers.get(model_name, set())) > 0
+        return bool(self._consumers.get(model_name, set()))
 
     def fire(self, session, model_name, *args, **kwargs):
         """ Call each consumer subscribed on the event with the given
