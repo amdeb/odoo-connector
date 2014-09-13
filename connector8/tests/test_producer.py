@@ -22,7 +22,7 @@ class test_producers(common.TransactionCase):
 
         self.recipient = Recipient()
 
-        # use env, not registry, to use new ai
+        # use env, not registry, to use new api
         self.model = self.env['res.partner']
         self.partner = self.model.create({'name': 'new'})
 
