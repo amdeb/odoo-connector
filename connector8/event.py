@@ -1,6 +1,26 @@
 # -*- coding: utf-8 -*-
+##############################################################################
+#
+#    Author: Guewen Baconnier
+#    Copyright 2012-2013 Camptocamp SA
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
 
 from collections import Callable
+from .connector import get_openerp_module
 
 
 class Event(object):
@@ -60,10 +80,6 @@ class Event(object):
     """
 
     def __init__(self):
-        """
-
-        :type self: object
-        """
         self._consumers = {None: set()}
 
     def subscribe(self, consumer, model_names=None, replacing=None):
@@ -72,7 +88,7 @@ class Event(object):
         :param consumer: the function to register on the event
         :param model_names: the consumer will be active only on these models,
             active on all models if ``None``
-        :param replacing: the function being replaced by this new one.
+        :param replacing: the function beeing replaced by this new one.
         """
         if replacing is not None:
             self.unsubscribe(replacing, model_names=model_names)
@@ -98,9 +114,14 @@ class Event(object):
         """ Return True if at least one consumer is registered
         for the model.
         """
-        if self._consumers.get(None, set()):
+        if any(self._consumers_for(session, None)):
             return True  # at least 1 global consumer exist
-        return bool(self._consumers.get(model_name, set()))
+        return any(self._consumers_for(session, model_name))
+
+    def _consumers_for(self, session, model_name):
+        is_installed = session.is_module_installed
+        return (cons for cons in self._consumers.get(model_name, ())
+                if is_installed(get_openerp_module(cons)))
 
     def fire(self, session, model_name, *args, **kwargs):
         """ Call each consumer subscribed on the event with the given
@@ -121,10 +142,9 @@ class Event(object):
         assert isinstance(model_name, basestring), (
             "Second argument must be the model name as string, "
             "instead received: %s" % model_name)
-
         args = tuple([session, model_name] + list(args))
         for name in (None, model_name):
-            for consumer in self._consumers.get(name, set()):
+            for consumer in self._consumers_for(session, name):
                 consumer(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -196,3 +216,4 @@ Listeners should take the following arguments:
  * record_id: id of the record
 
 """
+

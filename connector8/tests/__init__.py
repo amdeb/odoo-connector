@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import test_event
+import test_session
 
 fast_suite = [
 ]
 
 checks = [
-    test_event,
+    test_session,
 ]

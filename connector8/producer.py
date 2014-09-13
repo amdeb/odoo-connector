@@ -1,29 +1,90 @@
 # -*- coding: utf-8 -*-
+##############################################################################
+#
+#    Author: Guewen Baconnier
+#    Copyright 2013 Camptocamp SA
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
 
-import logging
+"""
+Producers of events.
+
+Fire the common events:
+
+-  ``on_record_create`` when a record is created
+-  ``on_record_write`` when something is written on a record
+-  ``on_record_unlink``  when a record is deleted
+
+"""
+
+
 from openerp import models, api
 
+from .session import ConnectorSession
+from .event import (on_record_create,
+                    on_record_write,
+                    on_record_unlink)
 
-_logger = logging.getLogger(__name__)
+
+def _is_connector_installed(pool):
+    return pool.get('connector.installed') is not None
+
 create_original = models.BaseModel.create
 
 
 @api.model
 @api.returns('self', lambda value: value.id)
 def create(self, values):
-    """Creates a new record and log the record id and values
-
-    :param self: model self
-    :param values: record values
-    :return: record id
-    :rtype : str
-    """
-
-    _logger.info("in new create")
-    _logger.debug("in new create debug message")
-    record = create_original(self, values)
-    _logger.info("Created record values: {0}".format(record))
-
-    return record
-
+    record_id = create_original(self, values)
+    if _is_connector_installed(self.pool):
+        session = ConnectorSession(self.env.cr, self.env.uid,
+                                   context=self.env.context)
+        on_record_create.fire(session, self._name, record_id.id, values)
+    return record_id
 models.BaseModel.create = create
+
+
+write_original = models.BaseModel.write
+
+
+@api.multi
+def write(self, values):
+    result = write_original(self, values)
+    if _is_connector_installed(self.pool):
+        session = ConnectorSession(self.env.cr, self.env.uid,
+                                   context=self.env.context)
+        if on_record_write.has_consumer_for(session, self._name):
+            for record_id in self._ids:
+                on_record_write.fire(session, self._name,
+                                     record_id, values)
+    return result
+models.BaseModel.write = write
+
+
+unlink_original = models.BaseModel.unlink
+
+
+def unlink(self, cr, uid, ids, context=None):
+    if _is_connector_installed(self.pool):
+        if not hasattr(ids, '__iter__'):
+            ids = [ids]
+        session = ConnectorSession(cr, uid, context=context)
+        if on_record_unlink.has_consumer_for(session, self._name):
+            for record_id in ids:
+                on_record_unlink.fire(session, self._name, record_id)
+    return unlink_original(self, cr, uid, ids, context=context)
+models.BaseModel.unlink = unlink
+
