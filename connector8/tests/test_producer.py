@@ -21,7 +21,9 @@ class test_producers(common.TransactionCase):
             pass
 
         self.recipient = Recipient()
-        self.model = self.registry('res.partner')
+
+        # use env, not registry, to use new ai
+        self.model = self.env('res.partner')
         self.partner = self.model.create({'name': 'new'})
 
     def test_on_record_create(self):
