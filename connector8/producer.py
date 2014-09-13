@@ -83,12 +83,13 @@ unlink_original = models.BaseModel.unlink
 
 
 def unlink(self, cr, uid, ids, context=None):
-    if _is_connector_installed(self.pool):
+    result = unlink_original(self, cr, uid, ids, context=context)
+    if result and _is_connector_installed(self.pool):
         if not hasattr(ids, '__iter__'):
             ids = [ids]
         session = ConnectorSession(cr, uid, context=context)
         if on_record_unlink.has_consumer_for(session, self._name):
             for record_id in ids:
                 on_record_unlink.fire(session, self._name, record_id)
-    return unlink_original(self, cr, uid, ids, context=context)
+    return result
 models.BaseModel.unlink = unlink

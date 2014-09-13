@@ -3,7 +3,6 @@
 import mock
 
 import openerp.tests.common as common
-
 from ..event import (
     on_record_create,
     on_record_write,
@@ -21,23 +20,23 @@ class test_producers(common.TransactionCase):
             pass
 
         self.recipient = Recipient()
-
-        # use env, not registry, to use new api
-        self.model = self.env['res.partner']
-        self.partner = self.model.create({'name': 'new'})
+        self.model = self.registry('res.partner')
+        self.partner_id = self.model.create(self.cr,
+                                            self.uid,
+                                            {'name': 'new'})
 
     def test_on_record_create(self):
         """
         Create a record and check if the event is called
         """
         @on_record_create(model_names='res.partner')
-        def event(session, model_name, record_set):
-            print record_set[0].name
-            self.recipient.name = record_set[0].name
+        def event(session, model_name, record_id, vals):
+            self.recipient.record_id = record_id
 
-        values = {'name': 'Kif Kroker'}
-        self.model.create(values)
-        self.assertEqual(self.recipient.name, values['name'])
+        record_id = self.model.create(self.cr,
+                                      self.uid,
+                                      {'name': 'Kif Kroker'})
+        self.assertEqual(self.recipient.record_id, record_id)
         on_record_create.unsubscribe(event)
 
     def test_on_record_write(self):
@@ -45,15 +44,18 @@ class test_producers(common.TransactionCase):
         Write on a record and check if the event is called
         """
         @on_record_write(model_names='res.partner')
-        def event(session, model_name, record_id, values=None):
+        def event(session, model_name, record_id, vals=None):
             self.recipient.record_id = record_id
-            self.recipient.values = values
+            self.recipient.vals = vals
 
-        # update ids in current model
-        values = {'name': 'Lrrr', 'city': 'Omicron Persei 8'}
-        self.model.write(values)
-        #self.assertEqual(self.recipient.record_id, partner.id)
-        self.assertDictEqual(self.recipient.values, values)
+        vals = {'name': 'Lrrr',
+                'city': 'Omicron Persei 8'}
+        self.model.write(self.cr,
+                         self.uid,
+                         self.partner_id,
+                         vals)
+        self.assertEqual(self.recipient.record_id, self.partner_id)
+        self.assertDictEqual(self.recipient.vals, vals)
         on_record_write.unsubscribe(event)
 
     def test_on_record_unlink(self):
@@ -62,11 +64,13 @@ class test_producers(common.TransactionCase):
         """
         @on_record_unlink(model_names='res.partner')
         def event(session, model_name, record_id):
-            self.recipient.record_id = record_id
+            if model_name == 'res.partner':
+                self.recipient.record_id = record_id
 
-        unlinked_id = self.partner.id
-        self.model.unlink(self.cr, self.uid, unlinked_id)
-        self.assertEqual(self.recipient.record_id, unlinked_id)
+        self.model.unlink(self.cr,
+                          self.uid,
+                          [self.partner_id])
+        self.assertEqual(self.recipient.record_id, self.partner_id)
         on_record_write.unsubscribe(event)
 
     def test_on_record_write_no_consumer(self):
@@ -76,7 +80,8 @@ class test_producers(common.TransactionCase):
         """
         # clear all the registered events
         on_record_write._consumers = {None: set()}
-
         with mock.patch.object(on_record_write, 'fire'):
-            self.model.write({'name': 'Kif Kroker'})
+            self.model.write(self.cr, self.uid,
+                             self.partner_id,
+                             {'name': 'Kif Kroker'})
             self.assertEqual(on_record_write.fire.called, False)
