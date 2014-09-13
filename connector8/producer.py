@@ -30,6 +30,7 @@ Fire the common events:
 
 """
 
+import logging
 
 from openerp import models, api
 
@@ -39,10 +40,16 @@ from .event import (on_record_create,
                     on_record_unlink)
 
 
+_logger = logging.getLogger(__name__)
+
+
 def _is_connector_installed(pool):
-    return pool.get('connector.installed') is not None
+    return pool.get('connector8.installed') is not None
+
 
 create_original = models.BaseModel.create
+write_original = models.BaseModel.write
+unlink_original = models.BaseModel.unlink
 
 
 @api.model
@@ -57,17 +64,15 @@ def create(self, values):
     if _is_connector_installed(self.pool):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
-        on_record_create.fire(session, self._name, record)
+        on_record_create.fire(session, self._name, record, values)
     return record
+
 models.BaseModel.create = create
-
-
-write_original = models.BaseModel.write
 
 
 @api.multi
 def write(self, values):
-    result = write_original(self, values)
+    write_original(self, values)
     if _is_connector_installed(self.pool):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
@@ -75,21 +80,21 @@ def write(self, values):
             for record_id in self._ids:
                 on_record_write.fire(session, self._name,
                                      record_id, values)
-    return result
+    return True
+
 models.BaseModel.write = write
 
 
-unlink_original = models.BaseModel.unlink
-
-
 def unlink(self, cr, uid, ids, context=None):
-    result = unlink_original(self, cr, uid, ids, context=context)
-    if result and _is_connector_installed(self.pool):
-        if not hasattr(ids, '__iter__'):
+    unlink_original(self, cr, uid, ids, context=context)
+    if _is_connector_installed(self.pool):
+        if isinstance(ids, (int, long)):
             ids = [ids]
+
         session = ConnectorSession(cr, uid, context=context)
         if on_record_unlink.has_consumer_for(session, self._name):
             for record_id in ids:
                 on_record_unlink.fire(session, self._name, record_id)
-    return result
+    return True
+
 models.BaseModel.unlink = unlink
