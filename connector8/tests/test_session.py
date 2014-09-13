@@ -105,4 +105,3 @@ class test_connector_session(common.TransactionCase):
         with session.change_context({test_key: 'value'}):
             self.assertIn(test_key, session.context)
         self.assertNotIn(test_key, session.context)
-

@@ -154,4 +154,3 @@ class test_event(common.TransactionCase):
         func.side_effect = Exception('Should not be called')
         self.event(func)
         self.event.fire(self.session, 'res.users')
-

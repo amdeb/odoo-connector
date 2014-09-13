@@ -200,8 +200,7 @@ Listeners should take the following arguments:
 
  * session: :py:class:`~connector.session.ConnectorSession` object
  * model_name: name of the model
- * record_id: id of the created record
- * vals:  field values updated, e.g {'field_name': field_value, ...}
+ * record: the newly created record
 
 """
 
@@ -216,4 +215,3 @@ Listeners should take the following arguments:
  * record_id: id of the record
 
 """
-

@@ -325,4 +325,3 @@ class Binder(ConnectorUnit):
         it will return ``product.product``.
         """
         raise NotImplementedError
-

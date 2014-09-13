@@ -48,12 +48,17 @@ create_original = models.BaseModel.create
 @api.model
 @api.returns('self', lambda value: value.id)
 def create(self, values):
-    record_id = create_original(self, values)
+    """ Create a new record with the values
+
+    :param values: the values of the new record
+    :return: the newly created record
+    """
+    record = create_original(self, values)
     if _is_connector_installed(self.pool):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
-        on_record_create.fire(session, self._name, record_id.id, values)
-    return record_id
+        on_record_create.fire(session, self._name, record)
+    return record
 models.BaseModel.create = create
 
 
@@ -87,4 +92,3 @@ def unlink(self, cr, uid, ids, context=None):
                 on_record_unlink.fire(session, self._name, record_id)
     return unlink_original(self, cr, uid, ids, context=context)
 models.BaseModel.unlink = unlink
-
