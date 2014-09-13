@@ -32,10 +32,11 @@ class test_producers(common.TransactionCase):
         """
         @on_record_create(model_names='res.partner')
         def event(session, model_name, record):
-            self.recipient.name = record.name
+            self.recipient.name = next(record).name
 
-        record = self.model.create({'name': 'Kif Kroker'})
-        self.assertEqual(self.recipient.name, record.name)
+        values = {'name': 'Kif Kroker'}
+        record = self.model.create(values)
+        self.assertEqual(self.recipient.name, values['name'])
         on_record_create.unsubscribe(event)
 
     def test_on_record_write(self):
@@ -65,9 +66,7 @@ class test_producers(common.TransactionCase):
                 self.recipient.record_id = record_id
 
         unlinked_id = self.partner.id
-        self.model.unlink(self.cr,
-                          self.uid,
-                          unlinked_id)
+        self.model.unlink(unlinked_id)
         self.assertEqual(self.recipient.record_id, unlinked_id)
         on_record_write.unsubscribe(event)
 
