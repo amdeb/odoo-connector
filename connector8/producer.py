@@ -51,7 +51,7 @@ def create(self, values):
     """ Create a new record with the values
 
     :param values: the values of the new record
-    :return: the newly created record
+    :return: the newly created record in a record set
     """
     record = create_original(self, values)
     if _is_connector_installed(self.pool):

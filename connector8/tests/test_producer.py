@@ -31,11 +31,11 @@ class test_producers(common.TransactionCase):
         Create a record and check if the event is called
         """
         @on_record_create(model_names='res.partner')
-        def event(session, model_name, record):
-            self.recipient.name = next(record).name
+        def event(session, model_name, record_set):
+            self.recipient.name = record_set[0].name
 
         values = {'name': 'Kif Kroker'}
-        record = self.model.create(values)
+        self.model.create(values)
         self.assertEqual(self.recipient.name, values['name'])
         on_record_create.unsubscribe(event)
 
@@ -49,10 +49,10 @@ class test_producers(common.TransactionCase):
             self.recipient.values = values
 
         # update ids in current model
-        self.model.browse(self.partner.id)
+        partner = self.model[0]
         values = {'name': 'Lrrr', 'city': 'Omicron Persei 8'}
         self.model.write(values)
-        self.assertEqual(self.recipient.record_id, self.partner.id)
+        self.assertEqual(self.recipient.record_id, partner.id)
         self.assertDictEqual(self.recipient.values, values)
         on_record_write.unsubscribe(event)
 
