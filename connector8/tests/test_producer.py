@@ -43,18 +43,16 @@ class test_producers(common.TransactionCase):
         Write on a record and check if the event is called
         """
         @on_record_write(model_names='res.partner')
-        def event(session, model_name, record_id, vals=None):
+        def event(session, model_name, record_id, values=None):
             self.recipient.record_id = record_id
-            self.recipient.vals = vals
+            self.recipient.values = values
 
-        vals = {'name': 'Lrrr',
-                'city': 'Omicron Persei 8'}
-        self.model.write(self.cr,
-                         self.uid,
-                         self.partner.id,
-                         vals)
+        # update ids in current model
+        self.model.browse(self.partner.id)
+        values = {'name': 'Lrrr', 'city': 'Omicron Persei 8'}
+        self.model.write(values)
         self.assertEqual(self.recipient.record_id, self.partner.id)
-        self.assertDictEqual(self.recipient.vals, vals)
+        self.assertDictEqual(self.recipient.values, values)
         on_record_write.unsubscribe(event)
 
     def test_on_record_unlink(self):
@@ -66,10 +64,11 @@ class test_producers(common.TransactionCase):
             if model_name == 'res.partner':
                 self.recipient.record_id = record_id
 
+        unlinked_id = self.partner.id
         self.model.unlink(self.cr,
                           self.uid,
-                          [self.partner.id])
-        self.assertEqual(self.recipient.record_id, self.partner.id)
+                          unlinked_id)
+        self.assertEqual(self.recipient.record_id, unlinked_id)
         on_record_write.unsubscribe(event)
 
     def test_on_record_write_no_consumer(self):
@@ -79,8 +78,7 @@ class test_producers(common.TransactionCase):
         """
         # clear all the registered events
         on_record_write._consumers = {None: set()}
+
         with mock.patch.object(on_record_write, 'fire'):
-            self.model.write(self.cr, self.uid,
-                             self.partner.id,
-                             {'name': 'Kif Kroker'})
+            self.model.write({'name': 'Kif Kroker'})
             self.assertEqual(on_record_write.fire.called, False)
