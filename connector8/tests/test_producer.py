@@ -20,6 +20,8 @@ class test_producers(common.TransactionCase):
             pass
 
         self.recipient = Recipient()
+        # need the old pool to call old unlink method
+        self.pool_model = self.registry('res.partner')
         self.model = self.env['res.partner']
         self.partner_unlink = self.model.create({'name': 'new'})
         self.partner_write = self.model.create({'name': 'write_test'})
@@ -67,7 +69,8 @@ class test_producers(common.TransactionCase):
                 self.recipient.record_id = record_id
 
         unlink_id = self.partner_unlink.id
-        self.partner_unlink.unlink(self.cr, self.uid, None)
+        # has to use the old style because of 8.0 bug
+        self.pool_model.unlink(self.cr, self.uid, unlink_id)
         self.assertEqual(self.recipient.record_id, unlink_id)
         on_record_write.unsubscribe(event)
 
