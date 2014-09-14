@@ -35,7 +35,7 @@ class test_producers(common.TransactionCase):
             self.recipient.name = record.name
 
         values = {'name': 'Kif Kroker'}
-        record_id = self.model.create(values)
+        record_id = self.model.create(self.cr, self.uid, values)
         self.assertEqual(self.recipient.record_id, record_id)
         self.assertEqual(self.recipient.name, record_id)
         on_record_create.unsubscribe(event)
