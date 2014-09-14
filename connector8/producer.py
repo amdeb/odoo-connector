@@ -58,13 +58,13 @@ def create(self, values):
     """ Create a new record with the values
 
     :param values: the values of the new record
-    :return: the newly created record in a record set
+    :return: the newly created record
     """
     record = create_original(self, values)
     if _is_connector_installed(self.pool):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
-        on_record_create.fire(session, self._name, record, values)
+        on_record_create.fire(session, self._name, record)
     return record
 
 models.BaseModel.create = create

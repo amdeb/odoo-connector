@@ -30,13 +30,14 @@ class test_producers(common.TransactionCase):
         Create a record and check if the event is called
         """
         @on_record_create(model_names='res.partner')
-        def event(session, model_name, record_id, vals):
-            self.recipient.record_id = record_id
+        def event(session, model_name, record):
+            self.recipient.record_id = record.id
+            self.recipient.name = record.name
 
-        record_id = self.model.create(self.cr,
-                                      self.uid,
-                                      {'name': 'Kif Kroker'})
+        values = {'name': 'Kif Kroker'}
+        record_id = self.model.create(values)
         self.assertEqual(self.recipient.record_id, record_id)
+        self.assertEqual(self.recipient.name, record_id)
         on_record_create.unsubscribe(event)
 
     def test_on_record_write(self):
