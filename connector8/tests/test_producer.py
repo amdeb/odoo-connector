@@ -67,7 +67,7 @@ class test_producers(common.TransactionCase):
                 self.recipient.record_id = record_id
 
         unlink_id = self.partner_unlink.id
-        self.partner_unlink.unlink()
+        self.model.unlink(self.cr, self.uid, unlink_id)
         self.assertEqual(self.recipient.record_id, unlink_id)
         on_record_write.unsubscribe(event)
 
