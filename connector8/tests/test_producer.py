@@ -49,7 +49,7 @@ class test_producers(common.TransactionCase):
 
         values = {
             'name': 'Lrrr',
-            'city': 'Omicron Persei 8'
+            'city': 'Omicron Persei 8',
         }
         self.partner_write.write(values)
 
