@@ -47,8 +47,10 @@ class test_producers(common.TransactionCase):
             self.recipient.record_id = record_id
             self.recipient.values = values
 
-        values = {'name': 'Lrrr',
-                'city': 'Omicron Persei 8'}
+        values = {
+            'name': 'Lrrr',
+            'city': 'Omicron Persei 8'
+        }
         self.partner_write.write(values)
 
         self.assertEqual(self.recipient.record_id, self.partner_write.id)
@@ -65,7 +67,7 @@ class test_producers(common.TransactionCase):
                 self.recipient.record_id = record_id
 
         unlink_id = self.partner_unlink.id
-        self.partner_unlink.unlink(self.cr, self.uid, unlink_id)
+        self.partner_unlink.unlink(self.cr, self.uid, [unlink_id])
         self.assertEqual(self.recipient.record_id, unlink_id)
         on_record_write.unsubscribe(event)
 
