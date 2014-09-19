@@ -79,9 +79,12 @@ class connector_checkpoint(models.Model):
                                                 operator=operator)
                 res_ids = [res[0] for res in results]
                 check_ids = self.search(
-                    self.cr, self.uid,
-                    args=[('model_id', '=', model_id),
-                    ('record_id', 'in', res_ids)],
+                    self.cr,
+                    self.uid,
+                    args=[
+                        ('model_id', '=', model_id),
+                        ('record_id', 'in', res_ids)
+                    ],
                     context=self.context
                 )
 
@@ -243,8 +246,9 @@ class connector_checkpoint_review(models.TransientModel):
 
     def review(self):
         form = self.browse()
-        checkpoint_ids = [checkpoint.id for
-                          checkpoint in form.checkpoint_ids
+        checkpoint_ids = [
+            checkpoint.id for
+            checkpoint in form.checkpoint_ids
         ]
 
         checkpoint_obj = self.env['connector.checkpoint'].browse(
