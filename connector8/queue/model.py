@@ -54,7 +54,8 @@ class QueueJob(models.Model):
         'company_id': fields.Many2one('res.company', 'Company'),
         'name': fields.Char('Description', readonly=True),
         'func_string': fields.Char('Task', readonly=True),
-        'func': fields.Binary('Pickled Function', readonly=True, required=True),
+        'func': fields.Binary('Pickled Function',
+                              readonly=True, required=True),
         'state': fields.Selection(STATES,
                                   string='State',
                                   readonly=True,
@@ -97,7 +98,8 @@ class QueueJob(models.Model):
                 _('No action available for this job'))
         return action
 
-    def _change_job_state(self, cr, uid, ids, state, result=None, context=None):
+    def _change_job_state(self, cr, uid, ids, state,
+                          result=None, context=None):
         """ Change the state of the `Job` object itself so it
         will change the other fields (date, result, ...)
         """
