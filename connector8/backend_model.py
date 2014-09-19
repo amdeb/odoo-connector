@@ -33,12 +33,8 @@ class connector_backend(models.AbstractModel):
     _description = 'Connector Backend'
     _backend_service = None
 
-    _columns = {
-        'name': fields.Char(string='Name', required=True),
-        # replace by a selection in concrete models
-        # 'version': fields.Selection(
-        #    selection=[], string='Version', required=True),
-    }
+    name = fields.Char(string='Name', required=True)
+    version = fields.Selection(selection=[], string='Version', required=True)
 
     def get_backend(self, id):
         """ For a record of backend, returns the appropriate instance
