@@ -2,7 +2,7 @@
 
 {'name': 'Connector8',
  'version': '0.1',
- 'author': 'Amdeb',
+ 'author': 'Openerp Connector Core Editors and Amdeb',
  'license': 'AGPL-3',
  'category': 'Generic Modules',
  'description': """
