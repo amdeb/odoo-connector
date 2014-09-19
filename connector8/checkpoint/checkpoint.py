@@ -39,37 +39,35 @@ class connector_checkpoint(models.Model):
 
     _inherit = ['mail.thread', 'ir.needaction_mixin']
 
-    def _get_models(self, cr, uid, context=None):
+    def _get_models(self):
         """ All models are allowed as reference, anyway the
         fields.reference are readonly. """
-        model_obj = self.pool.get('ir.model')
-        model_ids = model_obj.search(cr, uid, [], context=context)
-        models = model_obj.read(cr, uid, model_ids,
-                                ['model', 'name'], context=context)
+        model_obj = self.env['ir.model'].browse()
+        models = model_obj.read(fields=['model', 'name'])
         return [(m['model'], m['name']) for m in models]
 
-    def _get_ref(self, cr, uid, ids, prop, unknow_none, context=None):
+    def _get_ref(self):
         res = {}
-        for check in self.browse(cr, uid, ids, context=context):
+        for check in self.browse():
             res[check.id] = check.model_id.model + ',' + str(check.record_id)
         return res
 
-    def _get_record_name(self, cr, uid, ids, prop, unknow_none, context=None):
+    def _get_record_name(self):
         res = {}
-        for check in self.browse(cr, uid, ids, context=context):
-            model_obj = self.pool.get(check.model_id.model)
-            res[check.id] = model_obj.name_get(cr, uid, check.record_id,
-                                               context=context)[0][1]
+        for check in self.browse():
+            model_obj = self.env[check.model_id.model].browse(check.record_id)
+            res[check.id] = model_obj.name_get()[0][1]
         return res
 
-    def _search_record(self, cr, uid, obj, name, args, context=None):
+    def _search_record(self, args):
         ids = set()
-        model_obj = self.pool.get('ir.model')
+
         sql = "SELECT DISTINCT model_id FROM connector_checkpoint"
-        cr.execute(sql)
-        model_ids = [row[0] for row in cr.fetchall()]
-        models = model_obj.read(cr, uid, model_ids,
-                                ['model'], context=context)
+        rows = self.env.cr.execute(sql).fecthall()
+        model_ids = [row[0] for row in rows]
+
+        model_obj = self.evn['ir.model'].browse(model_ids)
+        models = model_obj.read(fields=['model'])
 
         for criteria in args:
             __, operator, value = criteria
@@ -77,15 +75,13 @@ class connector_checkpoint(models.Model):
                 model_id = model['id']
                 model_name = model['model']
                 model_obj = self.pool.get(model_name)
-                results = model_obj.name_search(cr, uid,
-                                                name=value,
-                                                operator=operator,
-                                                context=context)
+                results = model_obj.name_search(name=value,
+                                                operator=operator)
                 res_ids = [res[0] for res in results]
-                check_ids = self.search(cr, uid,
-                                        [('model_id', '=', model_id),
+                check_ids = self.search(self.env.cr, self.env.uid,
+                                        args=[('model_id', '=', model_id),
                                          ('record_id', 'in', res_ids)],
-                                        context=context)
+                                        context=self.context)
                 ids.update(check_ids)
         if not ids:
             return [('id', '=', '0')]
@@ -140,32 +136,40 @@ class connector_checkpoint(models.Model):
     }
 
     def reviewed(self, cr, uid, ids, context=None):
-        return self.write(cr, uid, ids,
-                          {'state': 'reviewed'},
-                          context=context)
+        return self.write({'state': 'reviewed'})
 
-    def _subscribe_users(self, cr, uid, ids, context=None):
+    def _subscribe_users(self, ids):
         """ Subscribe all users having the 'Connector Manager' group """
-        group_ref = self.pool.get('ir.model.data').get_object_reference(
-            cr, uid, 'connector', 'group_connector_manager')
+        group_ref = self.env['ir.model.data'].get_object_reference(
+            self.evn.cr, self.env.uid, 'connector', 'group_connector_manager')
         if not group_ref:
             return
         group_id = group_ref[1]
-        user_ids = self.pool.get('res.users').search(
-            cr, uid, [('groups_id', '=', group_id)], context=context)
-        self.message_subscribe_users(cr, uid, ids,
-                                     user_ids=user_ids,
-                                     context=context)
 
-    def create(self, cr, uid, vals, context=None):
-        obj_id = super(connector_checkpoint, self).create(
-            cr, uid, vals, context=context)
-        self._subscribe_users(cr, uid, [obj_id], context=context)
-        cp = self.browse(cr, uid, obj_id, context=context)
+        user_ids = self.env.pool.get('res.users').search(
+            self.env.cr, self.env.uid,
+            [('groups_id', '=', group_id)],
+            context=self.env.context
+        )
+
+        self.message_subscribe_users(
+            self.env.cr, self.env.uid, ids,
+            user_ids=user_ids,
+            context=self.env.context
+        )
+
+    def create(self, vals):
+        obj_id = super(connector_checkpoint, self).create(vals)
+        self._subscribe_users([obj_id])
+        cp = self.browse(obj_id)
         msg = _('A %s needs a review.') % cp.model_id.name
-        self.message_post(cr, uid, obj_id, body=msg,
-                          subtype='mail.mt_comment',
-                          context=context)
+        self.message_post(
+            self.env.cr, self.env.uid,
+            obj_id, body=msg,
+            subtype='mail.mt_comment',
+            context=self.env.context
+        )
+
         return obj_id
 
     def create_from_name(self, cr, uid, model_name, record_id,
@@ -176,11 +180,10 @@ class connector_checkpoint(models.Model):
                                      context=context)
         assert model_ids, "The model %s does not exist" % model_name
         backend = backend_model_name + ',' + str(backend_id)
-        return self.create(cr, uid,
-                           {'model_id': model_ids[0],
+        return self.create({'model_id': model_ids[0],
                             'record_id': record_id,
-                            'backend_id': backend},
-                           context=context)
+                            'backend_id': backend}
+        )
 
     def _needaction_domain_get(self, cr, uid, context=None):
         """ Returns the domain to filter records that require an action
@@ -193,9 +196,12 @@ def add_checkpoint(session, model_name, record_id,
                    backend_model_name, backend_id):
     cr, uid, context = session.cr, session.uid, session.context
     checkpoint_obj = session.pool['connector.checkpoint']
-    return checkpoint_obj.create_from_name(cr, uid, model_name, record_id,
-                                           backend_model_name, backend_id,
-                                           context=context)
+    return checkpoint_obj.create_from_name(
+        cr, uid,
+        model_name, record_id,
+        backend_model_name, backend_id,
+        context=context
+    )
 
 
 class connector_checkpoint_review(models.TransientModel):
