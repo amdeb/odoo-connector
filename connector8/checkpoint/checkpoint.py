@@ -91,44 +91,49 @@ class connector_checkpoint(models.Model):
             return [('id', '=', '0')]
         return [('id', 'in', tuple(ids))]
 
-    _columns = {
-        'record': fields.Reference(
-            compute='_get_ref',
-            type='reference',
-            string='Record',
-            selection=_get_models,
-            help="The record to review.",
-            size=128,
-            readonly=True),
-        'name': fields.Char(
-            compute='_get_record_name',
-            fnct_search=_search_record,
-            type='char',
-            string='Record Name',
-            help="Name of the record to review",
-            readonly=True),
-        'record_id': fields.Integer(string='Record ID',
-                                    required=True,
-                                    readonly=True),
-        'model_id': fields.Many2one(comodel_name='ir.model',
-                                    string='Model',
-                                    required=True,
-                                    readonly=True),
-        'backend_id': fields.Reference(
-            string='Imported from',
-            selection=_get_models,
-            size=128,
-            readonly=True,
-            required=True,
-            help="The record has been imported from this backend",
-            select=1),
-        'state': fields.Selection(
-            selection=[('need_review', 'Need Review'),
-                       ('reviewed', 'Reviewed')],
-            string='Status',
-            required=True,
-            readonly=True),
-    }
+
+    record = fields.Reference(
+        compute='_get_ref',
+        type='reference',
+        string='Record',
+        selection=_get_models,
+        help="The record to review.",
+        size=128,
+        readonly=True)
+
+    name = fields.Char(
+        compute='_get_record_name',
+        fnct_search=_search_record,
+        type='char',
+        string='Record Name',
+        help="Name of the record to review",
+        readonly=True)
+
+    record_id = fields.Integer(string='Record ID',
+                                required=True,
+                                readonly=True)
+
+    model_id = fields.Many2one(comodel_name='ir.model',
+                                string='Model',
+                                required=True,
+                                readonly=True)
+
+    backend_id = fields.Reference(
+        string='Imported from',
+        selection=_get_models,
+        size=128,
+        readonly=True,
+        required=True,
+        help="The record has been imported from this backend",
+        select=1)
+
+    state = fields.Selection(
+        selection=[('need_review', 'Need Review'),
+                   ('reviewed', 'Reviewed')],
+        string='Status',
+        required=True,
+        readonly=True)
+
 
     _defaults = {
         'state': 'need_review',
@@ -206,15 +211,13 @@ class connector_checkpoint_review(models.TransientModel):
             res = context['active_ids']
         return res
 
-    _columns = {
-        'checkpoint_ids': fields.Many2many(
-            comodel_name='connector.checkpoint',
-            relation='connector_checkpoint_review_rel',
-            column1='review_id',
-            column2='checkpoint_id',
-            string='Checkpoints',
-            domain="[('state', '=', 'need_review')]"),
-    }
+    checkpoint_ids = fields.Many2many(
+        comodel_name='connector.checkpoint',
+        relation='connector_checkpoint_review_rel',
+        column1='review_id',
+        column2='checkpoint_id',
+        string='Checkpoints',
+        domain="[('state', '=', 'need_review')]")
 
     _defaults = {
         'checkpoint_ids': _get_checkpoint_ids,

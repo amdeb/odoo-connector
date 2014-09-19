@@ -45,42 +45,40 @@ class QueueJob(models.Model):
 
     _removal_interval = 30  # days
 
-    _columns = {
-        'worker_id': fields.Many2one(comodel_name='queue.worker',
-                                     string='Worker',
-                                     ondelete='set null', readonly=True),
-        'uuid': fields.Char(string='UUID', readonly=True,
-                            select=True, required=True),
-        'user_id': fields.Many2one(comodel_name='res.users',
-                                   string='User ID',
-                                   required=True),
-        'company_id': fields.Many2one(comodel_name='res.company',
-                                      string='Company'),
-        'name': fields.Char(string='Description', readonly=True),
-        'func_string': fields.Char(string='Task', readonly=True),
-        'func': fields.Binary(string='Pickled Function',
-                              readonly=True, required=True),
-        'state': fields.Selection(selection=STATES,
-                                  string='State',
-                                  readonly=True,
-                                  required=True),
-        'priority': fields.Integer(string='Priority'),
-        'exc_info': fields.Text(string='Exception Info', readonly=True),
-        'result': fields.Text(string='Result', readonly=True),
-        'date_created': fields.Datetime(string='Created Date', readonly=True),
-        'date_started': fields.Datetime(string='Start Date', readonly=True),
-        'date_enqueued': fields.Datetime(string='Enqueue Time', readonly=True),
-        'date_done': fields.Datetime(string='Date Done', readonly=True),
-        'eta': fields.Datetime(string='Execute only after'),
-        'active': fields.Boolean(string='Active'),
-        'model_name': fields.Char(string='Model', readonly=True),
-        'retry': fields.Integer(string='Current try'),
-        'max_retries': fields.Integer(
-            string='Max. retries',
-            help="The job will fail if the number of tries reach the "
-                 "max. retries.\n"
-                 "Retries are infinite when empty."),
-    }
+    worker_id = fields.Many2one(comodel_name='queue.worker',
+                                 string='Worker',
+                                 ondelete='set null', readonly=True)
+    uuid = fields.Char(string='UUID', readonly=True,
+                        select=True, required=True)
+    user_id = fields.Many2one(comodel_name='res.users',
+                               string='User ID',
+                               required=True)
+    company_id = fields.Many2one(comodel_name='res.company',
+                                  string='Company')
+    name = fields.Char(string='Description', readonly=True)
+    func_string = fields.Char(string='Task', readonly=True)
+    func = fields.Binary(string='Pickled Function',
+                          readonly=True, required=True)
+    state = fields.Selection(selection=STATES,
+                              string='State',
+                              readonly=True,
+                              required=True)
+    priority = fields.Integer(string='Priority')
+    exc_info = fields.Text(string='Exception Info', readonly=True)
+    result = fields.Text(string='Result', readonly=True)
+    date_created = fields.Datetime(string='Created Date', readonly=True)
+    date_started = fields.Datetime(string='Start Date', readonly=True)
+    date_enqueued = fields.Datetime(string='Enqueue Time', readonly=True)
+    date_done = fields.Datetime(string='Date Done', readonly=True)
+    eta = fields.Datetime(string='Execute only after')
+    active = fields.Boolean(string='Active')
+    model_name = fields.Char(string='Model', readonly=True),
+    retry = fields.Integer(string='Current try')
+    max_retries = fields.Integer(
+        string='Max. retries',
+        help="The job will fail if the number of tries reach the "
+             "max. retries.\n"
+             "Retries are infinite when empty.")
 
     _defaults = {
         'active': True,
@@ -213,17 +211,15 @@ class QueueWorker(models.Model):
 
     worker_timeout = WORKER_TIMEOUT
 
-    _columns = {
-        'uuid': fields.Char(string='UUID', readonly=True,
-                            select=True, required=True),
-        'pid': fields.Char(string='PID', readonly=True),
-        'date_start': fields.Datetime(string='Start Date', readonly=True),
-        'date_alive': fields.Datetime(string='Last Alive Check',
-                                      readonly=True),
-        'job_ids': fields.One2many(comodel_name='queue.job',
-                                   inverse_name='worker_id',
-                                   string='Jobs', readonly=True),
-    }
+    uuid = fields.Char(string='UUID', readonly=True,
+                        select=True, required=True)
+    pid = fields.Char(string='PID', readonly=True)
+    date_start = fields.Datetime(string='Start Date', readonly=True),
+    date_alive = fields.Datetime(string='Last Alive Check',
+                                  readonly=True)
+    job_ids = fields.One2many(comodel_name='queue.job',
+                               inverse_name='worker_id',
+                               string='Jobs', readonly=True)
 
     def _notify_alive(self, cr, uid, worker, context=None):
         worker_ids = self.search(cr, uid,
@@ -384,9 +380,7 @@ class requeue_job(models.TransientModel):
             res = context['active_ids']
         return res
 
-    _columns = {
-        'job_ids': fields.Many2many(comodel_name='queue.job', string='Jobs'),
-    }
+    job_ids = fields.Many2many(comodel_name='queue.job', string='Jobs')
 
     _defaults = {
         'job_ids': _get_job_ids,
