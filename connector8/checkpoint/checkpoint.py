@@ -91,7 +91,6 @@ class connector_checkpoint(models.Model):
             return [('id', '=', '0')]
         return [('id', 'in', tuple(ids))]
 
-
     record = fields.Reference(
         compute='_get_ref',
         type='reference',
