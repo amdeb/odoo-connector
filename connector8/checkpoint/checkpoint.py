@@ -202,7 +202,8 @@ class connector_checkpoint_review(models.TransientModel):
     _name = 'connector.checkpoint.review'
     _description = 'Checkpoints Review'
 
-    def _get_checkpoint_ids(self, cr, uid, context=None):
+    def _get_checkpoint_ids(self):
+        context = self.env.context
         if context is None:
             context = {}
         res = False
@@ -223,13 +224,9 @@ class connector_checkpoint_review(models.TransientModel):
         'checkpoint_ids': _get_checkpoint_ids,
     }
 
-    def review(self, cr, uid, ids, context=None):
-        if isinstance(ids, (tuple, list)):
-            assert len(ids) == 1, "One ID expected"
-            ids = ids[0]
-
-        form = self.browse(cr, uid, ids, context=context)
+    def review(self):
+        form = self.browse()
         checkpoint_ids = [checkpoint.id for checkpoint in form.checkpoint_ids]
-        checkpoint_obj = self.pool['connector.checkpoint']
-        checkpoint_obj.reviewed(cr, uid, checkpoint_ids, context=context)
+        checkpoint_obj = self.env['connector.checkpoint']
+        checkpoint_obj.reviewed()
         return {'type': 'ir.actions.act_window_close'}
