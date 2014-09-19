@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
-
+import setting
+import backend_model
+import queue
 import connector
 import producer
-
-_connector_package_name = __name__
+import checkpoint
