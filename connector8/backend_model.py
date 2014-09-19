@@ -132,4 +132,3 @@ class external_binding(models.AbstractModel):
         'sync_date': fields.Datetime('Last synchronization date'),
         # add other fields in concrete models
     }
-

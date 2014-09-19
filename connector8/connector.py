@@ -70,12 +70,12 @@ def install_in_connector():
     # we need to call __new__ and __init__ in 2 phases because
     # __init__ needs to have the right __module__ and _module attributes
     model = MetaModel.__new__(MetaModel, class_name,
-                                  (AbstractModel,), {'_name': name})
+                              (AbstractModel,), {'_name': name})
     # Update the module of the model, it should be the caller's one
     model._module = openerp_module_name
     model.__module__ = module.__name__
     MetaModel.__init__(model, class_name,
-                           (AbstractModel,), {'_name': name})
+                       (AbstractModel,), {'_name': name})
 
 
 # install the connector itself
@@ -263,7 +263,7 @@ class Environment(object):
         :type base_class: :py:class:`connector.connector.ConnectorUnit`
         """
 
-        connector_unit_class =  self.backend.get_class(
+        connector_unit_class = self.backend.get_class(
             base_class, self.session, self.model_name)
         return connector_unit_class(self)
 

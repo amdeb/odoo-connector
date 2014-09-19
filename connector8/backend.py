@@ -349,6 +349,3 @@ class Backend(object):
 
         self.register_class(cls, replacing=replacing)
         return cls
-
-
-
