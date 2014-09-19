@@ -8,8 +8,7 @@
  'description': """
 This is a port of OCA connector to Odoo 8.0
 """,
- 'depends': ['base',
-             'base_setup',
+ 'depends': ['mail'
              ],
  'data': ['security/connector_security.xml',
           'security/ir.model.access.csv',
@@ -18,6 +17,8 @@ This is a port of OCA connector to Odoo 8.0
           'checkpoint/checkpoint_view.xml',
           'connector_menu.xml',
           'setting_view.xml',
+          'res_partner_view.xml',
           ],
- 'installable': True
+ 'installable': True,
+ 'application': True,
  }
