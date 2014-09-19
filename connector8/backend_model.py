@@ -34,9 +34,10 @@ class connector_backend(models.AbstractModel):
     _backend_service = None
 
     _columns = {
-        'name': fields.Char('Name', required=True),
+        'name': fields.Char(string='Name', required=True),
         # replace by a selection in concrete models
-        # 'version': fields.Selection([], 'Version', required=True),
+        'version': fields.Selection(
+            selection=[], string='Version', required=True),
     }
 
     def get_backend(self, id):
