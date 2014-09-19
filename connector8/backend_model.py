@@ -34,7 +34,11 @@ class connector_backend(models.AbstractModel):
     _backend_service = None
 
     name = fields.Char(string='Name', required=True)
-    version = fields.Selection(selection=[], string='Version', required=True)
+
+    version = fields.Selection(
+        selection=[],
+        string='Version',
+        required=True)
 
     def get_backend(self, id):
         """ For a record of backend, returns the appropriate instance
@@ -110,7 +114,7 @@ class external_binding(models.AbstractModel):
             sync_date = fields.Datetime(
                 string='Last synchronization date')
             magento_id = fields.Char(string='ID on Magento')
-            tax_class_id = fields.Integer(string='Tax Class ID'),
+            tax_class_id = fields.Integer(string='Tax Class ID')
 
 
             _sql_constraints = [
@@ -128,4 +132,3 @@ class external_binding(models.AbstractModel):
     # right after the export)
     sync_date = fields.Datetime(string='Last synchronization date')
     # add other fields in concrete models
-

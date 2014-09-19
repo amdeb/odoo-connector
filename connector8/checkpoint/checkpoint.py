@@ -109,14 +109,16 @@ class connector_checkpoint(models.Model):
         help="Name of the record to review",
         readonly=True)
 
-    record_id = fields.Integer(string='Record ID',
-                                required=True,
-                                readonly=True)
+    record_id = fields.Integer(
+        string='Record ID',
+        required=True,
+        readonly=True)
 
-    model_id = fields.Many2one(comodel_name='ir.model',
-                                string='Model',
-                                required=True,
-                                readonly=True)
+    model_id = fields.Many2one(
+        comodel_name='ir.model',
+        string='Model',
+        required=True,
+        readonly=True)
 
     backend_id = fields.Reference(
         string='Imported from',
@@ -133,7 +135,6 @@ class connector_checkpoint(models.Model):
         string='Status',
         required=True,
         readonly=True)
-
 
     _defaults = {
         'state': 'need_review',
