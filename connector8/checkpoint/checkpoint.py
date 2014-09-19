@@ -63,7 +63,7 @@ class connector_checkpoint(models.Model):
         ids = set()
 
         sql = "SELECT DISTINCT model_id FROM connector_checkpoint"
-        rows = self.env.cr.execute(sql).fecthall()
+        rows = self.cr.execute(sql).fecthall()
         model_ids = [row[0] for row in rows]
 
         model_obj = self.evn['ir.model'].browse(model_ids)
@@ -74,17 +74,22 @@ class connector_checkpoint(models.Model):
             for model in models:
                 model_id = model['id']
                 model_name = model['model']
-                model_obj = self.pool.get(model_name)
+                model_obj = self.registry[model_name]
                 results = model_obj.name_search(name=value,
                                                 operator=operator)
                 res_ids = [res[0] for res in results]
-                check_ids = self.search(self.env.cr, self.env.uid,
-                                        args=[('model_id', '=', model_id),
-                                        ('record_id', 'in', res_ids)],
-                                        context=self.context)
+                check_ids = self.search(
+                    self.cr, self.uid,
+                    args=[('model_id', '=', model_id),
+                    ('record_id', 'in', res_ids)],
+                    context=self.context
+                )
+
                 ids.update(check_ids)
+
         if not ids:
             return [('id', '=', '0')]
+
         return [('id', 'in', tuple(ids))]
 
     record = fields.Reference(
@@ -141,21 +146,21 @@ class connector_checkpoint(models.Model):
     def _subscribe_users(self, ids):
         """ Subscribe all users having the 'Connector Manager' group """
         group_ref = self.env['ir.model.data'].get_object_reference(
-            self.evn.cr, self.env.uid, 'connector', 'group_connector_manager')
+            self.cr, self.uid, 'connector', 'group_connector_manager')
         if not group_ref:
             return
         group_id = group_ref[1]
 
-        user_ids = self.env.pool.get('res.users').search(
-            self.env.cr, self.env.uid,
+        user_ids = self.registry['res.users'].search(
+            self.cr, self.uid,
             [('groups_id', '=', group_id)],
-            context=self.env.context
+            context=self.context
         )
 
         self.message_subscribe_users(
-            self.env.cr, self.env.uid, ids,
+            self.cr, self.uid, ids,
             user_ids=user_ids,
-            context=self.env.context
+            context=self.context
         )
 
     def create(self, vals):
@@ -164,25 +169,29 @@ class connector_checkpoint(models.Model):
         cp = self.browse(obj_id)
         msg = _('A %s needs a review.') % cp.model_id.name
         self.message_post(
-            self.env.cr, self.env.uid,
+            self.cr, self.uid,
             obj_id, body=msg,
             subtype='mail.mt_comment',
-            context=self.env.context
+            context=self.context
         )
 
         return obj_id
 
     def create_from_name(self, cr, uid, model_name, record_id,
                          backend_model_name, backend_id, context=None):
-        model_obj = self.pool.get('ir.model')
-        model_ids = model_obj.search(cr, uid,
-                                     [('model', '=', model_name)],
-                                     context=context)
+        model_obj = self.registry['ir.model']
+        model_ids = model_obj.search(
+            cr, uid,
+            [('model', '=', model_name)],
+            context=context
+        )
+
         assert model_ids, "The model %s does not exist" % model_name
         backend = backend_model_name + ',' + str(backend_id)
-        return self.create({'model_id': model_ids[0],
-                            'record_id': record_id,
-                            'backend_id': backend
+        return self.create({
+            'model_id': model_ids[0],
+            'record_id': record_id,
+            'backend_id': backend
         })
 
     def _needaction_domain_get(self, cr, uid, context=None):
@@ -209,9 +218,10 @@ class connector_checkpoint_review(models.TransientModel):
     _description = 'Checkpoints Review'
 
     def _get_checkpoint_ids(self):
-        context = self.env.context
+        context = self.context
         if context is None:
             context = {}
+
         res = False
         if (context.get('active_model') == 'connector.checkpoint' and
                 context.get('active_ids')):
@@ -224,7 +234,8 @@ class connector_checkpoint_review(models.TransientModel):
         column1='review_id',
         column2='checkpoint_id',
         string='Checkpoints',
-        domain="[('state', '=', 'need_review')]")
+        domain="[('state', '=', 'need_review')]"
+    )
 
     _defaults = {
         'checkpoint_ids': _get_checkpoint_ids,
@@ -236,8 +247,9 @@ class connector_checkpoint_review(models.TransientModel):
                           checkpoint in form.checkpoint_ids
         ]
 
-        checkpoint_obj = self.env[
-            'connector.checkpoint'].browse(checkpoint_ids)
+        checkpoint_obj = self.env['connector.checkpoint'].browse(
+            checkpoint_ids
+        )
 
         checkpoint_obj.reviewed()
         return {'type': 'ir.actions.act_window_close'}
