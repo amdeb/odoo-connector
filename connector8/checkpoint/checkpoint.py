@@ -80,7 +80,7 @@ class connector_checkpoint(models.Model):
                 res_ids = [res[0] for res in results]
                 check_ids = self.search(self.env.cr, self.env.uid,
                                         args=[('model_id', '=', model_id),
-                                         ('record_id', 'in', res_ids)],
+                                        ('record_id', 'in', res_ids)],
                                         context=self.context)
                 ids.update(check_ids)
         if not ids:
@@ -135,7 +135,7 @@ class connector_checkpoint(models.Model):
         'state': 'need_review',
     }
 
-    def reviewed(self, cr, uid, ids, context=None):
+    def reviewed(self):
         return self.write({'state': 'reviewed'})
 
     def _subscribe_users(self, ids):
@@ -182,8 +182,8 @@ class connector_checkpoint(models.Model):
         backend = backend_model_name + ',' + str(backend_id)
         return self.create({'model_id': model_ids[0],
                             'record_id': record_id,
-                            'backend_id': backend}
-        )
+                            'backend_id': backend
+        })
 
     def _needaction_domain_get(self, cr, uid, context=None):
         """ Returns the domain to filter records that require an action
@@ -232,7 +232,12 @@ class connector_checkpoint_review(models.TransientModel):
 
     def review(self):
         form = self.browse()
-        checkpoint_ids = [checkpoint.id for checkpoint in form.checkpoint_ids]
-        checkpoint_obj = self.env['connector.checkpoint']
+        checkpoint_ids = [checkpoint.id for
+                          checkpoint in form.checkpoint_ids
+        ]
+
+        checkpoint_obj = self.env[
+            'connector.checkpoint'].browse(checkpoint_ids)
+
         checkpoint_obj.reviewed()
         return {'type': 'ir.actions.act_window_close'}
