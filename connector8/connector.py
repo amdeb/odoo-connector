@@ -20,14 +20,14 @@
 ##############################################################################
 
 import inspect
-from openerp.osv import orm
+from openerp.models import MetaModel, AbstractModel
 
 
 def _get_openerp_module_name(module_path):
     """ Extract the name of the OpenERP module from the path of the
     Python module.
 
-    Taken from OpenERP server: ``openerp.osv.orm``
+    Taken from OpenERP server: ``openerp.models``
 
     The (OpenERP) module name can be in the ``openerp.addons`` namespace
     or not. For instance module ``sale`` can be imported as
@@ -47,9 +47,14 @@ def install_in_connector():
 
     It has to be called once per OpenERP module to plug.
 
-    Under the cover, it creates a ``orm.AbstractModel`` whose name is
+    Under the cover, it creates an ``AbstractModel`` whose name is
     the name of the module with a ``.intalled`` suffix:
     ``{name_of_the_openerp_module_to_install}.installed``.
+
+    The model class name is the model name with ``.`` replaced by ``_``.
+    MetaModal saves a record of {model._module: model} in
+    module_to_models attribute that can be accessed from
+    all model class (not from an instance of a model class).
 
     The connector then uses this model to know when the OpenERP module
     is installed or not and whether it should use the ConnectorUnit
@@ -64,13 +69,13 @@ def install_in_connector():
     class_name = name.replace('.', '_')
     # we need to call __new__ and __init__ in 2 phases because
     # __init__ needs to have the right __module__ and _module attributes
-    model = orm.MetaModel.__new__(orm.MetaModel, class_name,
-                                  (orm.AbstractModel,), {'_name': name})
+    model = MetaModel.__new__(MetaModel, class_name,
+                                  (AbstractModel,), {'_name': name})
     # Update the module of the model, it should be the caller's one
     model._module = openerp_module_name
     model.__module__ = module.__name__
-    orm.MetaModel.__init__(model, class_name,
-                           (orm.AbstractModel,), {'_name': name})
+    MetaModel.__init__(model, class_name,
+                           (AbstractModel,), {'_name': name})
 
 
 # install the connector itself
@@ -90,17 +95,19 @@ def get_openerp_module(cls_or_func):
 class MetaConnectorUnit(type):
     """ Metaclass for ConnectorUnit.
 
-    Keeps a ``_module`` attribute on the classes, the same way OpenERP does
-    it for the Model classes. It is then used to filter them according to
-    the state of the module (installed or not).
+    Add a ``model_name`` property and a ``_openerp_module_``
+    property to every ControlUnit class. Every ConnectorUnit subclass
+    must have a ``_model_name`` defined. The ``_openerp_module_``
+    property is used to find the module status (installed or not) of
+    a ConnectorUnit subclass.
     """
 
     @property
     def model_name(cls):
         """
         The ``model_name`` is used to find the class and is mandatory for
-        :py:class:`~connector.connector.ConnectorUnit` which are registered
-        on a :py:class:`~connector.backend.Backend`.
+        :py:class:`connector.ConnectorUnit` which are registered
+        on a :py:class:`backend.Backend`.
         """
         if cls._model_name is None:
             raise NotImplementedError("no _model_name for %s" % cls)
@@ -118,13 +125,13 @@ class ConnectorUnit(object):
     """Abstract class for each piece of the connector:
 
     Examples:
-        * :py:class:`connector.connector.Binder`
+        * :py:class:`connector.Binder`
         * :py:class:`connector.unit.mapper.Mapper`
         * :py:class:`connector.unit.synchronizer.Synchronizer`
         * :py:class:`connector.unit.backend_adapter.BackendAdapter`
 
     Or basically any class intended to be registered in a
-    :py:class:`~connector.backend.Backend`.
+    :py:class:`backend.Backend`.
     """
 
     __metaclass__ = MetaConnectorUnit
@@ -135,7 +142,7 @@ class ConnectorUnit(object):
         """
 
         :param environment: current environment (backend, session, ...)
-        :type environment: :py:class:`connector.connector.Environment`
+        :type environment: :py:class:`connector.Environment`
         """
         super(ConnectorUnit, self).__init__()
         self.environment = environment
@@ -149,14 +156,12 @@ class ConnectorUnit(object):
         self.localcontext = self.session.context
 
     @classmethod
-    def match(cls, session, model):
+    def match(cls, model):
         """ Returns True if the current class correspond to the
         searched model.
 
-        :param session: current session
-        :type session: :py:class:`connector.session.ConnectorSession`
         :param model: model to match
-        :type model: str or :py:class:`openerp.osv.orm.Model`
+        :type model: str or :py:class:`openerp.models.Model`
         """
         # filter out the ConnectorUnit from modules
         # not installed in the current DB
@@ -164,27 +169,26 @@ class ConnectorUnit(object):
             model_name = model._name
         else:
             model_name = model  # str
+
         return model_name in cls.model_name
 
     def get_connector_unit_for_model(self, connector_unit_class, model=None):
-        """ According to the current
-        :py:class:`~connector.connector.Environment`,
-        search and returns an instance of the
-        :py:class:`~connector.connector.ConnectorUnit` for the current
-        model and being a class or subclass of ``connector_unit_class``.
+        """ Use the current :py:class:`connector.Environment` to
+        search and return an instance of the
+        :py:class:`connector.ConnectorUnit` for the current model.
 
-        If a ``model`` is given, a new
-        :py:class:`~connector.connector.Environment`
+        If a ``model`` is given, a new :py:class:`connector.Environment`
         is built for this model.
 
         :param connector_unit_class: ``ConnectorUnit`` to search
                                      (class or subclass)
-        :type connector_unit_class: :py:class:`connector.connector.
-                      ConnectorUnit`
+        :type connector_unit_class: :py:class:`connector.ConnectorUnit`
         :param model: to give if the ``ConnectorUnit`` is for another
                       model than the current one
         :type model: str
+        :return: a subclass of ``ConnectorUnit`` class.
         """
+
         if model is None:
             env = self.environment
         else:
@@ -200,14 +204,14 @@ class ConnectorUnit(object):
 
 
 class Environment(object):
-    """ Environment used by the different units for the synchronization.
+    """ Environment used by different units for synchronization.
 
     .. attribute:: backend
 
         Current backend we are working with.
         Obtained with ``backend_record.get_backend()``.
 
-        Instance of: :py:class:`connector.backend.Backend`
+        Instance of: :py:class:`backend.Backend`
 
     .. attribute:: backend_record
 
@@ -251,16 +255,17 @@ class Environment(object):
 
     def get_connector_unit(self, base_class):
         """ Searches and returns an instance of the
-        :py:class:`~connector.connector.ConnectorUnit` for the current
-        model and being a class or subclass of ``base_class``.
+        :py:class:`connector.ConnectorUnit` for the current model
 
         The returned instance is built with ``self`` for its environment.
 
         :param base_class: ``ConnectorUnit`` to search (class or subclass)
         :type base_class: :py:class:`connector.connector.ConnectorUnit`
         """
-        return self.backend.get_class(base_class, self.session,
-                                      self.model_name)(self)
+
+        connector_unit_class =  self.backend.get_class(
+            base_class, self.session, self.model_name)
+        return connector_unit_class(self)
 
 
 class Binder(ConnectorUnit):

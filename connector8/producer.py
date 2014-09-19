@@ -43,8 +43,8 @@ from .event import (on_record_create,
 _logger = logging.getLogger(__name__)
 
 
-def _is_connector_installed(pool):
-    return pool.get('connector8.installed') is not None
+def _is_connector_installed(self):
+    return self.pool.get('connector8.installed') is not None
 
 
 create_original = models.BaseModel.create
@@ -61,7 +61,7 @@ def create(self, values):
     :return: the newly created record
     """
     record = create_original(self, values)
-    if _is_connector_installed(self.pool):
+    if _is_connector_installed(self):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
         on_record_create.fire(session, self._name, record)
@@ -73,7 +73,7 @@ models.BaseModel.create = create
 @api.multi
 def write(self, values):
     write_original(self, values)
-    if _is_connector_installed(self.pool):
+    if _is_connector_installed(self):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
         if on_record_write.has_consumer_for(session, self._name):
@@ -87,7 +87,7 @@ models.BaseModel.write = write
 
 def unlink(self, cr, uid, ids, context=None):
     unlink_original(self, cr, uid, ids, context=context)
-    if _is_connector_installed(self.pool):
+    if _is_connector_installed(self):
         if isinstance(ids, (int, long)):
             ids = [ids]
 
