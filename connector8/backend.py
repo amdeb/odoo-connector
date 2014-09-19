@@ -20,7 +20,7 @@
 ##############################################################################
 from functools import partial
 from collections import namedtuple
-from connector8.exception import NoConnectorUnitError
+from .exception import NoConnectorUnitError
 
 __all__ = ['Backend']
 

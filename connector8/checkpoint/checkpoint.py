@@ -93,7 +93,7 @@ class connector_checkpoint(models.Model):
 
     _columns = {
         'record': fields.Reference(
-            compute = '_get_ref',
+            compute='_get_ref',
             type='reference',
             string='Record',
             selection=_get_models,
@@ -101,7 +101,7 @@ class connector_checkpoint(models.Model):
             size=128,
             readonly=True),
         'name': fields.Char(
-            compute = '_get_record_name',
+            compute='_get_record_name',
             fnct_search=_search_record,
             type='char',
             string='Record Name',

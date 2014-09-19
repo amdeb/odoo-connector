@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import sys
 import logging
-import os
-import signal
 import time
 import threading
 from contextlib import closing
@@ -57,7 +55,8 @@ class WorkerConnector(workers.Worker):
                        "AND state = %s", ('connector', 'installed'),
                        log_exceptions=False)
         except ProgrammingError as err:
-            if unicode(err).startswith('relation "ir_module_module" does not exist'):
+            if unicode(err).startswith(
+                    'relation "ir_module_module" does not exist'):
                 _logger.debug('Database %s is not an OpenERP database,'
                               ' connector worker not started', db_name)
             else:
@@ -78,7 +77,7 @@ class WorkerConnector(workers.Worker):
             if config['db_name']:
                 db_names = config['db_name'].split(',')
             else:
-               db_names = openerp.service.db.exp_list(True)
+                db_names = openerp.service.db.exp_list(True)
             if len(db_names):
                 self.db_index = (self.db_index + 1) % len(db_names)
                 db_name = db_names[self.db_index]
