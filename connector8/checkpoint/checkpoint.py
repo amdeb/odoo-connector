@@ -124,7 +124,7 @@ class connector_checkpoint(models.Model):
             select=1),
         'state': fields.Selection(
             selection=[('need_review', 'Need Review'),
-                ('reviewed', 'Reviewed')],
+                       ('reviewed', 'Reviewed')],
             string='Status',
             required=True,
             readonly=True),

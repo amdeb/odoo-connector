@@ -385,7 +385,7 @@ class requeue_job(models.TransientModel):
         return res
 
     _columns = {
-        'job_ids': fields.Many2many(string='queue.job', string='Jobs'),
+        'job_ids': fields.Many2many(comodel_name='queue.job', string='Jobs'),
     }
 
     _defaults = {
