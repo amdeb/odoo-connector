@@ -102,18 +102,20 @@ class external_binding(models.AbstractModel):
             _inherits = {'res.partner.category': 'openerp_id'}
 
             _columns = {
-                'openerp_id': fields.many2one('res.partner.category',
-                                              string='Partner Category',
-                                              required=True,
-                                              ondelete='cascade'),
-                'backend_id': fields.many2one(
-                    'magento.backend',
-                    'Magento Backend',
+                'openerp_id': fields.Many2one(
+                    comodel_name='res.partner.category',
+                    string='Partner Category',
+                    required=True,
+                    ondelete='cascade'),
+                'backend_id': fields.Many2one(
+                    comodel_name='magento.backend',
+                    string='Magento Backend',
                     required=True,
                     ondelete='restrict'),
-                'sync_date': fields.datetime('Last synchronization date'),
-                'magento_id': fields.char('ID on Magento'),
-                'tax_class_id': fields.integer('Tax Class ID'),
+                'sync_date': fields.Datetime(
+                    string='Last synchronization date'),
+                'magento_id': fields.Char(string='ID on Magento'),
+                'tax_class_id': fields.Integer(string='Tax Class ID'),
             }
 
             _sql_constraints = [
@@ -130,6 +132,6 @@ class external_binding(models.AbstractModel):
         # TODO write the date on import / export
         # and skip import / export (avoid unnecessary import
         # right after the export)
-        'sync_date': fields.Datetime('Last synchronization date'),
+        'sync_date': fields.Datetime(string='Last synchronization date'),
         # add other fields in concrete models
     }

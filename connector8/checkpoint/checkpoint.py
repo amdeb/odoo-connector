@@ -107,15 +107,15 @@ class connector_checkpoint(models.Model):
             string='Record Name',
             help="Name of the record to review",
             readonly=True),
-        'record_id': fields.Integer('Record ID',
+        'record_id': fields.Integer(string='Record ID',
                                     required=True,
                                     readonly=True),
-        'model_id': fields.Many2one('ir.model',
+        'model_id': fields.Many2one(comodel_name='ir.model',
                                     string='Model',
                                     required=True,
                                     readonly=True),
         'backend_id': fields.Reference(
-            'Imported from',
+            string='Imported from',
             selection=_get_models,
             size=128,
             readonly=True,
@@ -123,9 +123,9 @@ class connector_checkpoint(models.Model):
             help="The record has been imported from this backend",
             select=1),
         'state': fields.Selection(
-            [('need_review', 'Need Review'),
-             ('reviewed', 'Reviewed')],
-            'Status',
+            selection=[('need_review', 'Need Review'),
+                ('reviewed', 'Reviewed')],
+            string='Status',
             required=True,
             readonly=True),
     }
@@ -207,12 +207,13 @@ class connector_checkpoint_review(models.TransientModel):
         return res
 
     _columns = {
-        'checkpoint_ids': fields.Many2many('connector.checkpoint',
-                                           'connector_checkpoint_review_rel',
-                                           'review_id', 'checkpoint_id',
-                                           string='Checkpoints',
-                                           domain="[('state', '=', "
-                                           "'need_review')]"),
+        'checkpoint_ids': fields.Many2many(
+            comodel_name='connector.checkpoint',
+            relation='connector_checkpoint_review_rel',
+            column1='review_id',
+            column2='checkpoint_id',
+            string='Checkpoints',
+            domain="[('state', '=', 'need_review')]"),
     }
 
     _defaults = {
