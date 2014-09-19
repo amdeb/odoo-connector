@@ -11,7 +11,11 @@ This is a port of OCA connector to Odoo 8.0
  'depends': ['base',
              'base_setup',
              ],
- 'data': ['connector_menu.xml',
+ 'data': ['security/connector_security.xml',
+          'security/ir.model.access.csv',
+          'queue/model_view.xml',
+          'queue/queue_data.xml',
+          'connector_menu.xml',
           'setting_view.xml',
           ],
  'installable': True
