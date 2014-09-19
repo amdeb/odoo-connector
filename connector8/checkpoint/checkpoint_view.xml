@@ -4,7 +4,7 @@
 
         <record id="view_connector_checkpoint_form" model="ir.ui.view">
             <field name="name">connector.checkpoint.form</field>
-            <field name="model">connector_checkpoint</field>
+            <field name="model">connector.checkpoint</field>
             <field name="arch" type="xml">
                 <form string="Connector Checkpoint" create="false"
                         delete="false" edit="false" version="7.0">
@@ -39,7 +39,7 @@
 
         <record id="view_connector_checkpoint_tree" model="ir.ui.view">
             <field name="name">connector.checkpoint.tree</field>
-            <field name="model">connector_checkpoint</field>
+            <field name="model">connector.checkpoint</field>
             <field name="arch" type="xml">
                 <tree string="Connector Checkpoint" create="false"
                         delete="false" edit="false" version="7.0">
@@ -59,7 +59,7 @@
 
         <record id="view_connector_checkpoint_search" model="ir.ui.view">
             <field name="name">connector.checkpoint.search</field>
-            <field name="model">connector_checkpoint</field>
+            <field name="model">connector.checkpoint</field>
             <field name="arch" type="xml">
                 <search string="Connector Checkpoint">
                     <field name="name"/>
@@ -77,7 +77,7 @@
 
         <record id="action_connector_checkpoint" model="ir.actions.act_window">
             <field name="name">Connector Checkpoint</field>
-            <field name="res_model">connector_checkpoint</field>
+            <field name="res_model">connector.checkpoint</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="view_id" ref="view_connector_checkpoint_tree"/>
@@ -96,7 +96,7 @@
 
         <record id="view_connector_checkpoint_review" model="ir.ui.view">
             <field name="name">connector.checkpoint.review.form</field>
-            <field name="model">connector_checkpoint_review</field>
+            <field name="model">connector.checkpoint.review</field>
             <field name="arch" type="xml">
                 <form string="Review Checkpoints" version="7.0">
                     <group string="The selected checkpoints will be set as reviewed.">
@@ -113,7 +113,7 @@
 
         <record id="action_connector_checkpoint_review" model="ir.actions.act_window">
             <field name="name">Review Checkpoints</field>
-            <field name="res_model">connector_checkpoint_review</field>
+            <field name="res_model">connector.checkpoint.review</field>
             <field name="view_type">form</field>
             <field name="view_mode">form</field>
             <field name="view_id" ref="view_connector_checkpoint_review"/>
