@@ -210,11 +210,13 @@ class Backend(object):
                 if not replacings:
                     service_class = entry.service_class
                     is_installed = session.is_module_installed(
-                            service_class._openerp_module_
+                        service_class._openerp_module_
                     )
+                    is_subclass = issubclass(service_class, base_class)
+                    is_model_matched = service_class.match(model_name)
                     if (is_installed and
-                        issubclass(service_class, base_class) and
-                        service_class.match(model_name)
+                        is_subclass and
+                        is_model_matched
                     ):
                         candidates.add(entry.service_class)
 

@@ -62,7 +62,7 @@ class test_backend(unittest2.TestCase):
 
     def test_get_backend_none(self):
         """ Find a backend with a default """
-        backend = Backend(self.name)
+        Backend(self.name)
         self.assertIsNone(Backend.get_backend("NotExistingName"))
 
     def test_get_backend_default(self):
