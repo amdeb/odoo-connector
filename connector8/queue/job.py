@@ -59,7 +59,7 @@ def _unpickle(pickled):
     """ Unpickles a string and catch all types of errors it can throw,
     to raise only NotReadableJobError in case of error.
 
-    OpenERP stores the text fields as 'utf-8', so we specify the encoding.
+    Odoo stores the text fields as 'utf-8', so we specify the encoding.
 
     `loads()` may raises many types of exceptions (AttributeError,
     IndexError, TypeError, KeyError, ...). They are all catched and
@@ -88,14 +88,14 @@ class JobStorage(object):
         raise NotImplementedError
 
 
-class OpenERPJobStorage(JobStorage):
-    """ Store a job on OpenERP """
+class OdooJobStorage(JobStorage):
+    """ Store a job on Odoo """
 
     _job_model_name = 'queue.job'
     _worker_model_name = 'queue.worker'
 
     def __init__(self, session):
-        super(OpenERPJobStorage, self).__init__()
+        super(OdooJobStorage, self).__init__()
         self.session = session
         self.job_model = self.session.pool.get(self._job_model_name)
         self.worker_model = self.session.pool.get(self._worker_model_name)
@@ -144,32 +144,32 @@ class OpenERPJobStorage(JobStorage):
 
     def exists(self, job_uuid):
         """Returns if a job still exists in the storage."""
-        return bool(self._openerp_id(job_uuid))
+        return bool(self._odoo_id(job_uuid))
 
-    def _openerp_id(self, job_uuid):
-        openerp_id = None
+    def _odoo_id(self, job_uuid):
+        odoo_id = None
         job_ids = self.job_model.search(self.session.cr,
                                         SUPERUSER_ID,
                                         [('uuid', '=', job_uuid)],
                                         context=self.session.context,
                                         limit=1)
         if job_ids:
-            openerp_id = job_ids[0]
-        return openerp_id
+            odoo_id = job_ids[0]
+        return odoo_id
 
-    def openerp_id(self, job):
-        return self._openerp_id(job.uuid)
+    def odoo_id(self, job):
+        return self._odoo_id(job.uuid)
 
     def _worker_id(self, worker_uuid):
-        openerp_id = None
+        odoo_id = None
         worker_ids = self.worker_model.search(self.session.cr,
                                               SUPERUSER_ID,
                                               [('uuid', '=', worker_uuid)],
                                               context=self.session.context,
                                               limit=1)
         if worker_ids:
-            openerp_id = worker_ids[0]
-        return openerp_id
+            odoo_id = worker_ids[0]
+        return odoo_id
 
     def store(self, job):
         """ Store the Job """
@@ -210,7 +210,7 @@ class OpenERPJobStorage(JobStorage):
         if self.exists(job.uuid):
             self.job_model.write(self.session.cr,
                                  self.session.uid,
-                                 self.openerp_id(job),
+                                 self.odoo_id(job),
                                  vals,
                                  self.session.context)
         else:
@@ -240,7 +240,7 @@ class OpenERPJobStorage(JobStorage):
                 '%s does no longer exist in the storage.' % job_uuid)
         stored = self.job_model.browse(self.session.cr,
                                        self.session.uid,
-                                       self._openerp_id(job_uuid),
+                                       self._odoo_id(job_uuid),
                                        context=self.session.context)
 
         func = _unpickle(stored.func)
@@ -339,7 +339,7 @@ class Job(object):
 
     .. attribute:: model_name
 
-        OpenERP model on which the job will run.
+        Odoo model on which the job will run.
 
     .. attribute:: priority
 
@@ -371,7 +371,7 @@ class Job(object):
 
     .. attribute:: user_id
 
-        OpenERP user id which created the job
+        Odoo user id which created the job
 
     .. attribute:: eta
 
@@ -619,7 +619,7 @@ def job(func):
    Add a ``delay`` attribute on the decorated function.
 
    When ``delay`` is called, the function is transformed to a job and
-   stored in the OpenERP queue.job model. The arguments and keyword
+   stored in the Odoo queue.job model. The arguments and keyword
    arguments given in ``delay`` will be the arguments used by the
    decorated function when it is executed.
 
@@ -676,7 +676,7 @@ def job(func):
     """
     def delay(session, model_name, *args, **kwargs):
         """Enqueue the function. Return the uuid of the created job."""
-        return OpenERPJobStorage(session).enqueue_resolve_args(
+        return OdooJobStorage(session).enqueue_resolve_args(
             func,
             model_name=model_name,
             *args,
@@ -688,7 +688,7 @@ def job(func):
 def related_action(action=lambda session, job: None, **kwargs):
     """ Attach a *Related Action* to a job.
 
-    A *Related Action* will appear as a button on the OpenERP view.
+    A *Related Action* will appear as a button on the Odoo view.
     The button will execute the action, usually it will open the
     form view of the record related to the job.
 

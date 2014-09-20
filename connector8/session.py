@@ -39,7 +39,7 @@ class ConnectorSessionHandler(object):
 
     .. attribute:: context
 
-        The current OpenERP's context
+        The current Odoo's context
 
     Usage::
 
@@ -82,11 +82,11 @@ class ConnectorSessionHandler(object):
 
 
 class ConnectorSession(object):
-    """ Container for the OpenERP transactional stuff:
+    """ Container for the Odoo transactional stuff:
 
     .. attribute:: cr
 
-        The OpenERP Cursor
+        The database cursor
 
     .. attribute:: uid
 
@@ -98,7 +98,7 @@ class ConnectorSession(object):
 
     .. attribute:: context
 
-        The current OpenERP's context
+        The current Odoo's context
     """
 
     def __init__(self, cr, uid, context=None):

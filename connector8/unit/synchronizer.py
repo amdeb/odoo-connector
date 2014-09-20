@@ -83,7 +83,7 @@ class Synchronizer(ConnectorUnit):
 
 
 class ExportSynchronizer(Synchronizer):
-    """ Synchronizer for exporting data from OpenERP to a backend """
+    """ Synchronizer for exporting data from Odoo to a backend """
 
     @property
     def mapper(self):
@@ -100,7 +100,7 @@ class ExportSynchronizer(Synchronizer):
 
 
 class ImportSynchronizer(Synchronizer):
-    """ Synchronizer for importing data from a backend to OpenERP """
+    """ Synchronizer for importing data from a backend to Odoo """
 
     @property
     def mapper(self):

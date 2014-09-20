@@ -23,13 +23,13 @@ import inspect
 from openerp.models import MetaModel, AbstractModel
 
 
-def _get_openerp_module_name(module_path):
-    """ Extract the name of the OpenERP module from the path of the
+def _get_odoo_module_name(module_path):
+    """ Extract the name of the Odoo module from the path of the
     Python module.
 
-    Taken from OpenERP server: ``openerp.models``
+    Taken from Odoo server: ``openerp.models``
 
-    The (OpenERP) module name can be in the ``openerp.addons`` namespace
+    The Odoo module name can be in the ``openerp.addons`` namespace
     or not. For instance module ``sale`` can be imported as
     ``openerp.addons.sale`` (the good way) or ``sale`` (for backward
     compatibility).
@@ -43,36 +43,36 @@ def _get_openerp_module_name(module_path):
 
 
 def install_in_connector():
-    """ Installs an OpenERP module in the ``Connector`` framework.
+    """ Installs an Odoo module in the ``Connector`` framework.
 
-    It has to be called once per OpenERP module to plug.
+    It has to be called once per Odoo module to plug.
 
-    Under the cover, it creates an ``AbstractModel`` whose name is
-    the name of the module with a ``.intalled`` suffix:
-    ``{name_of_the_openerp_module_to_install}.installed``.
+    Under the cover, it creates a subclass of ``AbstractModel``.
+    The model class name has a ``.intalled`` suffix:
+    ``{name_of_the_odoo_module_to_install}.installed``.
 
     The model class name is the model name with ``.`` replaced by ``_``.
     MetaModal saves a record of {model._module: model} in
     module_to_models attribute that can be accessed from
     all model class (not from an instance of a model class).
 
-    The connector then uses this model to know when the OpenERP module
+    The connector then uses this model to know when the Odoo module
     is installed or not and whether it should use the ConnectorUnit
     classes of this module or not and whether it should fire the
     consumers of events or not.
     """
     # Get the module of the caller
     module = inspect.getmodule(inspect.currentframe().f_back)
-    openerp_module_name = _get_openerp_module_name(module.__name__)
+    odoo_module_name = _get_odoo_module_name(module.__name__)
     # Build a new AbstractModel with the name of the module and the suffix
-    name = "%s.installed" % openerp_module_name
+    name = "%s.installed" % odoo_module_name
     class_name = name.replace('.', '_')
     # we need to call __new__ and __init__ in 2 phases because
     # __init__ needs to have the right __module__ and _module attributes
     model = MetaModel.__new__(MetaModel, class_name,
                               (AbstractModel,), {'_name': name})
     # Update the module of the model, it should be the caller's one
-    model._module = openerp_module_name
+    model._module = odoo_module_name
     model.__module__ = module.__name__
     MetaModel.__init__(model, class_name,
                        (AbstractModel,), {'_name': name})
@@ -82,22 +82,22 @@ def install_in_connector():
 install_in_connector()
 
 
-def get_openerp_module(cls_or_func):
+def get_odoo_module(cls_or_func):
     """ For a top level function or class, returns the
-    name of the OpenERP module where it lives.
+    name of the Odoo module where it lives.
 
     So we will be able to filter them according to the modules
     installation state.
     """
-    return _get_openerp_module_name(cls_or_func.__module__)
+    return _get_odoo_module_name(cls_or_func.__module__)
 
 
 class MetaConnectorUnit(type):
     """ Metaclass for ConnectorUnit.
 
-    Add a ``model_name`` property and a ``_openerp_module_``
+    Add a ``model_name`` property and a ``odoo_module_name``
     property to every ControlUnit class. Every ConnectorUnit subclass
-    must have a ``_model_name`` defined. The ``_openerp_module_``
+    must have a ``_model_name`` defined. The ``odoo_module_name``
     property is used to find the module status (installed or not) of
     a ConnectorUnit subclass.
     """
@@ -118,7 +118,7 @@ class MetaConnectorUnit(type):
 
     def __init__(cls, name, bases, attrs):
         super(MetaConnectorUnit, cls).__init__(name, bases, attrs)
-        cls._openerp_module_ = get_openerp_module(cls)
+        cls.odoo_module_name = get_odoo_module(cls)
 
 
 class ConnectorUnit(object):
@@ -221,12 +221,12 @@ class Environment(object):
 
     .. attribute:: session
 
-        Current session we are working in. It contains the OpenERP
+        Current session we are working in. It contains the Odoo
         cr, uid and context.
 
     .. attribute:: model_name
 
-        Name of the OpenERP model to work with.
+        Name of the Odoo model to work with.
     """
 
     def __init__(self, backend_record, session, model_name):
@@ -278,10 +278,10 @@ class Binder(ConnectorUnit):
     _model_name = None  # define in sub-classes
 
     def to_openerp(self, external_id, unwrap=False):
-        """ Give the OpenERP ID for an external ID
+        """ Give the Odoo ID for an external ID
 
         :param external_id: external ID for which we want
-                            the OpenERP ID
+                            the Odoo ID
         :param unwrap: if True, returns the openerp_id
                        else return the id of the binding
         :return: a record ID, depending on the value of unwrap,
@@ -291,10 +291,10 @@ class Binder(ConnectorUnit):
         raise NotImplementedError
 
     def to_backend(self, binding_id, wrap=False):
-        """ Give the external ID for an OpenERP binding ID
+        """ Give the external ID for an Odoo binding ID
         (ID in a model magento.*)
 
-        :param binding_id: OpenERP binding ID for which we want the backend id
+        :param binding_id: Odoo binding ID for which we want the backend id
         :param wrap: if False, binding_id is the ID of the binding,
                      if True, binding_id is the ID of the normal record, the
                      method will search the corresponding binding and returns
@@ -304,10 +304,10 @@ class Binder(ConnectorUnit):
         raise NotImplementedError
 
     def bind(self, external_id, binding_id):
-        """ Create the link between an external ID and an OpenERP ID
+        """ Create the link between an external ID and an Odoo ID
 
         :param external_id: external id to bind
-        :param binding_id: OpenERP ID to bind
+        :param binding_id: Odoo ID to bind
         :type binding_id: int
         """
         raise NotImplementedError

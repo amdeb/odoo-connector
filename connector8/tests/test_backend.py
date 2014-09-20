@@ -5,7 +5,7 @@ import unittest2
 import openerp.tests.common as common
 from ..backend import Backend
 from ..exception import ConnectorUnitError
-from ..connector import Binder, ConnectorUnit
+from ..connector import ConnectorUnit
 from ..session import ConnectorSession
 
 
@@ -94,11 +94,11 @@ class test_backend(unittest2.TestCase):
         self.assertEqual(expected, repr(backend))
 
 
-class test_backend_register(common.TransactionCase):
+class test_backend_service_registry(common.TransactionCase):
     """ Test registration of classes on the Backend"""
 
     def setUp(self):
-        super(test_backend_register, self).setUp()
+        super(test_backend_service_registry, self).setUp()
         self.service_name = 'calamitorium'
         self.version = '1.14'
         self.model_name = 'res.users'
@@ -107,31 +107,19 @@ class test_backend_register(common.TransactionCase):
         self.session = ConnectorSession(self.cr, self.uid)
 
     def tearDown(self):
-        super(test_backend_register, self).tearDown()
+        super(test_backend_service_registry, self).tearDown()
         Backend._clear_backend_registry()
         del self.parent._class_entries[:]
         del self.backend._class_entries[:]
 
     def test_register_get_registered(self):
         """get the registered service class"""
-        class BenderBinder(Binder):
+        class BenderBinder(ConnectorUnit):
             _model_name = self.model_name
 
         self.backend.register_service_class(BenderBinder)
         ref = self.backend.get_service_class(
             BenderBinder, self.session, self.model_name
-        )
-
-        self.assertEqual(ref, BenderBinder)
-
-    def test_register_get_base(self):
-        """get the registered service class using base class"""
-        class BenderBinder(Binder):
-            _model_name = self.model_name
-
-        self.backend.register_service_class(BenderBinder)
-        ref = self.backend.get_service_class(
-            Binder, self.session, self.model_name
         )
 
         self.assertEqual(ref, BenderBinder)
@@ -147,26 +135,15 @@ class test_backend_register(common.TransactionCase):
         )
         self.assertEqual(ref, ZoidbergMapper)
 
-    def test_get_registered_from_parent(self):
-        """ It should get the parent's class when no class is defined"""
-        @self.parent
-        class FryBinder(Binder):
-            _model_name = self.model_name
-
-        ref = self.backend.get_service_class(
-            Binder, self.session, self.model_name
-        )
-        self.assertEqual(ref, FryBinder)
-
     def test_no_register_error(self):
-        """ Error when asking for a class and none is found"""
-        class FryBinder(Binder):
+        """ Return None for unregistered service"""
+        class FryBinder(ConnectorUnit):
             _model_name = self.model_name
 
-        with self.assertRaises(ConnectorUnitError):
-            self.backend.get_service_class(
-                FryBinder, self.session, self.model_name
-            )
+        matching_cls = self.backend.get_service_class(
+            FryBinder, self.session, self.model_name
+        )
+        self.assertIsNone(matching_cls)
 
     def test_get_class_match_subclass(self):
         """ search subclass when both base and sub registered """
@@ -211,8 +188,8 @@ class test_backend_register(common.TransactionCase):
             _model_name = self.model_name
 
         # trick the origin of the class, let it think
-        # that it comes from the OpenERP module 'not installed module'
-        LambdaNoUnit._openerp_module_ = 'not installed module'
+        # that it comes from the Odoo module 'not installed module'
+        LambdaNoUnit.odoo_module_name = 'not installed module'
         self.backend(LambdaNoUnit)
 
         matching_cls = self.backend.get_service_class(
@@ -253,15 +230,15 @@ class test_backend_register(common.TransactionCase):
             _model_name = self.model_name
 
         # trick the origin of the class, let it think
-        # that it comes from the OpenERP module 'not installed module'
-        LambdaNoUnit._openerp_module_ = 'not installed module'
+        # that it comes from the Odoo module 'not installed module'
+        LambdaNoUnit.odoo_module_name = 'not installed module'
         self.backend(LambdaNoUnit, replacing=LambdaYesUnit)
 
         matching_cls = self.backend.get_service_class(
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_replacing_diamond(self):
+    def test_get_class_replacing_two(self):
         """ Replace several classes in a diamond fashion """
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name

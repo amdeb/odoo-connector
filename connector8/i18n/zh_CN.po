@@ -1,10 +1,10 @@
-# Translation of OpenERP Server.
+# Translation of Odoo Server.
 # This file contains the translation of the following modules:
 #	* connector
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenERP Server 7.0-20140227-001259\n"
+"Project-Id-Version: Odoo Server 8.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-05-01 13:36+0000\n"
 "PO-Revision-Date: 2014-03-18 07:33+0000\n"
@@ -117,8 +117,8 @@ msgstr "队列中"
 
 #. module: connector8
 #: help:connector.config.settings,module_portal_anonymous:0
-msgid "Enable the public part of openerp, openerp becomes a public website."
-msgstr "启用OpenERP公共端，使OpenERP成为公共站点"
+msgid "Enable the public part of Odoo, Odoo becomes a public website."
+msgstr "启用Odoo公共端，使Odoo成为公共站点"
 
 #. module: connector8
 #: field:queue.job,max_retries:0
@@ -383,8 +383,8 @@ msgstr "是听众"
 
 #. module: connector8
 #: help:connector.config.settings,module_share:0
-msgid "Share or embbed any screen of openerp."
-msgstr "分享或嵌入任何OpenERP的截屏"
+msgid "Share or embbed any screen of Odoo."
+msgstr "分享或嵌入任何Odoo的截屏"
 
 #. module: connector8
 #: field:queue.job,active:0
@@ -507,9 +507,9 @@ msgstr "名称"
 #. module: connector8
 #: help:connector.config.settings,alias_domain:0
 msgid ""
-"If you have setup a catch-all email domain redirected to the OpenERP server, "
+"If you have setup a catch-all email domain redirected to the Odoo server, "
 "enter the domain name here."
-msgstr "如果你已经将邮件域重定向到了OpenERP 服务器，请在此输入域名"
+msgstr "如果你已经将邮件域重定向到了Odoo 服务器，请在此输入域名"
 
 #. module: connector8
 #: field:connector.config.settings,alias_domain:0

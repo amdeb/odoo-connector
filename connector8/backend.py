@@ -210,7 +210,7 @@ class Backend(object):
                 if not replacings:
                     service_class = entry.service_class
                     is_installed = session.is_module_installed(
-                        service_class._openerp_module_
+                        service_class.odoo_module_name
                     )
                     is_subclass = issubclass(service_class, base_class)
                     is_model_matched = service_class.match(model_name)
@@ -250,14 +250,18 @@ class Backend(object):
             return None
 
         # too many matches
-        error = '{} service classes found for class type {} ' \
-                'for session: {} and model name {}'.format(
+        error_template = '{0} service classes found for class type {1} ' \
+            'for session: {2} and model name {3}. ' \
+            'Matched classes including 1st: {4}.  2nd: {5}'
+        error_message = error_template.format(
             len(matching_classes),
             base_class,
             session,
-            model_name
+            model_name,
+            matching_classes.pop(),
+            matching_classes.pop()
         )
-        raise ConnectorUnitError(error)
+        raise ConnectorUnitError(error_message)
 
     def _register_replace(self, replacing, entry):
         """ add entry to the replaced_by part of replacing class(es) """
@@ -314,7 +318,7 @@ class Backend(object):
 
         Thus, by doing::
 
-            magento.get_class(Binder, 'a.model')
+            magento.get_service_class(Binder, 'a.model')
 
         We get the correct class ``MagentoBinder``.
 
@@ -330,8 +334,8 @@ class Backend(object):
 
         :param service_class: the ConnectorUnit class class to register
         :type service_class: :py:class:`connector.ConnectorUnit`
-        :param replacing: optional, the ConnectorUnit class or a list of
-            classes to replace
+        :param replacing: optional, a ConnectorUnit class or several
+        classes (in an iterable container)to replace
         :type replacing: :py:class:`connector.ConnectorUnit`
         """
 

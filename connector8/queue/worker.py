@@ -36,7 +36,7 @@ from openerp.service import db
 from openerp.tools import config
 from .queue import JobsQueue
 from ..session import ConnectorSessionHandler
-from .job import (OpenERPJobStorage,
+from .job import (OdooJobStorage,
                   PENDING,
                   DONE)
 from ..exception import (NoSuchJobError,
@@ -57,7 +57,7 @@ class Worker(threading.Thread):
     """ Post and retrieve jobs from the queue, execute them"""
 
     queue_class = JobsQueue
-    job_storage_class = OpenERPJobStorage
+    job_storage_class = OdooJobStorage
 
     def __init__(self, db_name, watcher):
         super(Worker, self).__init__()
@@ -277,7 +277,7 @@ class WorkerWatcher(threading.Thread):
                 except ProgrammingError as err:
                     if unicode(err).startswith('relation "ir_module_module"'
                                                ' does not exist'):
-                        _logger.debug('Database %s is not an OpenERP database,'
+                        _logger.debug('Database %s is not an Odoo database,'
                                       ' connector worker not started', db_name)
                     else:
                         raise
@@ -352,7 +352,7 @@ def start_service():
     watcher.start()
 
 # We have to launch the Jobs Workers only if:
-# 1. OpenERP is used in standalone mode (monoprocess)
+# 1. Odoo is used in standalone mode (monoprocess)
 # 2. Or it is used in multiprocess (with option ``--workers``)
 #    but the current process is a Connector Worker
 #    (launched with the ``openerp-connector-worker`` script).

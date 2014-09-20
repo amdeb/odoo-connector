@@ -57,7 +57,7 @@ class WorkerConnector(workers.Worker):
         except ProgrammingError as err:
             if unicode(err).startswith(
                     'relation "ir_module_module" does not exist'):
-                _logger.debug('Database %s is not an OpenERP database,'
+                _logger.debug('Database %s is not an Odoo database,'
                               ' connector worker not started', db_name)
             else:
                 raise

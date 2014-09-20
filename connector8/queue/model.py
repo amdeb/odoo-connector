@@ -27,7 +27,7 @@ from openerp import models, fields
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from openerp.tools.translate import _
 
-from .job import STATES, DONE, PENDING, OpenERPJobStorage
+from .job import STATES, DONE, PENDING, OdooJobStorage
 from .worker import WORKER_TIMEOUT, watcher
 from ..session import ConnectorSession
 
@@ -133,7 +133,7 @@ class QueueJob(models.Model):
             assert len(ids) == 1, "1 ID expected, got %s" % ids
             ids = ids[0]
         session = ConnectorSession(cr, uid, context=context)
-        storage = OpenERPJobStorage(session)
+        storage = OdooJobStorage(session)
         job = self.browse(cr, uid, ids, context=context)
         job = storage.load(job.uuid)
         action = job.related_action(session)
@@ -152,7 +152,7 @@ class QueueJob(models.Model):
             ids = [ids]
 
         session = ConnectorSession(cr, uid, context=context)
-        storage = OpenERPJobStorage(session)
+        storage = OdooJobStorage(session)
         for job in self.browse(cr, uid, ids, context=context):
             job = storage.load(job.uuid)
             if state == DONE:
@@ -327,7 +327,7 @@ class QueueWorker(models.Model):
         .. warning:: commit transaction
            ``cr.commit()`` is called, so please always call
            this method in your own transaction, not in the main
-           OpenERP's transaction
+           Odoo's transaction
 
         :param max_jobs: maximal limit of jobs to assign on a worker
         :type max_jobs: int
