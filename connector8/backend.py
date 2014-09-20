@@ -22,58 +22,6 @@ from functools import partial
 from collections import namedtuple
 from .exception import NoConnectorUnitError
 
-__all__ = ['Backend']
-
-
-class BackendRegistry(object):
-    """ Hold a set of backends """
-    def __init__(self):
-        self.backends = set()
-
-    def register_backend(self, backend):
-        """ Register an instance of :py:class:`connector8.backend.Backend`
-
-        :param backend: backend to register
-        :type backend: Backend
-        """
-        self.backends.add(backend)
-
-    def get_backend(self, service, version=None):
-        """ Return an instance of :py:class:`connector8.backend.Backend`
-        for a ``service`` and a ``version``
-
-        :param service: name of the service to return
-        :type service: str
-        :param version: version of the service to return
-        :type version: str
-        """
-        for backend in self.backends:
-            if backend.match(service, version):
-                return backend
-        raise ValueError('No backend found for %s %s' %
-                         (service, version))
-
-
-BACKENDS = BackendRegistry()
-
-
-def get_backend(service, version=None):
-    """ Return an instance of :py:class:`connector.backend.Backend`
-    for a ``service`` and a ``version``
-
-    :param service: name of the service to return
-    :type service: str
-    :param version: version of the service to return
-    :type version: str
-    """
-    return BACKENDS.get_backend(service, version)
-
-
-# Represents an entry for a class in a ``Backend`` registry.
-_ConnectorUnitEntry = namedtuple('_ConnectorUnitEntry',
-                                 ['cls',
-                                  'replaced_by'])
-
 
 class Backend(object):
     """ A backend represents a system to interact with,
@@ -81,7 +29,7 @@ class Backend(object):
 
     It owns 3 properties:
 
-    .. attribute:: service
+    .. attribute:: name
 
         Name of the service, for instance 'magento'
 
@@ -92,17 +40,17 @@ class Backend(object):
     .. attribute:: parent
 
         A parent backend. When no
-        :py:class:`~connector8.connector.ConnectorUnit`
+        :py:class:`connector.ConnectorUnit`
         is found for a backend, it will search it in the `parent`.
 
     The Backends structure is a key part of the framework,
     but is rather simple.
 
     * A ``Backend`` instance holds a registry of
-      :py:class:`~connector8.connector.ConnectorUnit` classes
-    * It can return the appropriate
-      :py:class:`~connector8.connector.ConnectorUnit` to use for a task
-    * If no :py:class:`~connector8.connector.ConnectorUnit`
+      :py:class:`connector.ConnectorUnit` classes
+    * It can return an appropriate
+      :py:class:`connector.ConnectorUnit` to use for a task
+    * If no :py:class:`connector.ConnectorUnit`
       is registered for a task, it will ask it to its direct parent
       (and so on)
 
@@ -163,7 +111,7 @@ class Backend(object):
 
     .. note:: when using the framework, you won't need to call
               :py:meth:`~get_class`, usually, you will call
-              :py:meth:`connector8.connector.Environment.get_connector_unit`.
+              :py:meth:`connector.Environment.get_connector_unit`.
 
     The vertical extension is the one you will probably use the most, because
     most of the things you will change concern your custom adaptations or
@@ -176,52 +124,75 @@ class Backend(object):
     redefine an ``AdvancedImportMapper``, which should be used when
     the addon is installed. This is the horizontal extension mechanism.
 
-    Replace a :py:class:`~connector8.connector.ConnectorUnit` by another one
+    Replace a :py:class:`connector.ConnectorUnit` by another one
     in a backend::
 
-        @backend(replacing=ImportMapper)
+        @magento(replacing=ImportMapper)
         class AdvancedImportMapper(ImportMapper):
             _model_name = 'product.product'
-
-    .. warning:: The horizontal extension should be used sparingly and
-                 cautiously since as soon as 2 addons want to replace the same
-                 class, you'll have a conflict (which would need to create a
-                 third addon to glue them, ``replacing`` can take a tuple of
-                 classes to replace and this is exponential). This mechanism
-                 should be used only in some well placed circumstances for
-                 generic addons.
     """
 
-    def __init__(self, service=None, version=None,
-                 parent=None, registry=None):
-        if service is None and parent is None:
-            raise ValueError('A service or a parent service is expected')
-        self._service = service
+    _backend_registry = set()
+
+    # used in unit test
+    @staticmethod
+    def _clear_backend_registry():
+        Backend._backend_registry.clear()
+
+    @staticmethod
+    def get_backend(name, version=None, default=None):
+        """ Return an instance of :py:class:`backend.Backend`
+        for a ``name`` and a ``version``. If not found,
+        return default or None if no default specified
+
+        :param name: name of the service to return
+        :type name: str
+        :param version: version of the service to return
+        :type version: str
+        """
+
+        for backend in Backend._backend_registry:
+            if backend.match(name, version):
+                return backend
+        else:
+            return default
+
+    # Represents an entry for a service class in a backend
+    # the first element is a service class while the
+    # second is a list of other service classes that replace
+    # this service class
+    _ConnectorUnitEntry = namedtuple(
+        '_ConnectorUnitEntry',  ['service_class', 'replaced_by']
+    )
+
+    def __init__(self, name=None, version=None, parent=None):
+        if name is None and parent is None:
+            raise ValueError('A name or a parent is expected')
+
+        self.name = name if name is not None else parent.name
         self.version = version
         self.parent = parent
+
+        #  a list of registered service classes
+        # that are instances of _ConnectorUnitEntry
         self._class_entries = []
-        if registry is None:
-            registry = BACKENDS
-        registry.register_backend(self)
 
-    def match(self, service, version):
+        Backend._backend_registry.add(self)
+
+    def match(self, name, version):
         """Used to find the backend for a service and a version"""
-        return (self.service == service and
+        return (self.name == name and
                 self.version == version)
-
-    @property
-    def service(self):
-        return self._service or self.parent.service
 
     def __str__(self):
         if self.version:
-            return 'Backend(\'%s\', \'%s\')' % (self.service, self.version)
-        return 'Backend(\'%s\')>' % self.service
+            return 'Backend(\'%s\', \'%s\')' % (self.name, self.version)
+        return 'Backend(\'%s\')' % self.name
 
     def __repr__(self):
         if self.version:
-            return '<Backend \'%s\', \'%s\'>' % (self.service, self.version)
-        return '<Backend \'%s\'>' % self.service
+            return '<Backend \'%s\', \'%s\'>' % (self.name, self.version)
+        return '<Backend \'%s\'>' % self.name
 
     def _get_classes(self, base_class, session, model_name):
         def follow_replacing(entries):
@@ -237,20 +208,27 @@ class Backend(object):
                 # It happens when the entries in 'replaced_by' are
                 # in modules not installed.
                 if not replacings:
-                    cls = entry.cls
-                    if (session.is_module_installed(cls._openerp_module_) and
-                            issubclass(cls, base_class) and
-                            cls.match(model_name)):
-                        candidates.add(entry.cls)
+                    service_class = entry.service_class
+                    is_installed = session.is_module_installed(
+                            service_class._openerp_module_
+                    )
+                    if (is_installed and
+                        issubclass(service_class, base_class) and
+                        service_class.match(model_name)
+                    ):
+                        candidates.add(entry.service_class)
+
             return candidates
 
         matching_classes = follow_replacing(self._class_entries)
         if not matching_classes and self.parent:
-            matching_classes = self.parent._get_classes(base_class,
-                                                        session, model_name)
+            matching_classes = self.parent._get_classes(
+                base_class, session, model_name
+            )
+
         return matching_classes
 
-    def get_class(self, base_class, session, model_name):
+    def get_service_class(self, base_class, session, model_name):
         """ Find a matching subclass of ``base_class`` from the registered
         classes.
 
@@ -261,8 +239,9 @@ class Backend(object):
         :param model_name: the model name to search for
         :type: str
         """
-        matching_classes = self._get_classes(base_class, session,
-                                             model_name)
+        matching_classes = self._get_classes(
+            base_class, session, model_name)
+
         if not matching_classes:
             raise NoConnectorUnitError('No matching class found for %s '
                                        'with session: %s, '
@@ -272,40 +251,49 @@ class Backend(object):
         assert len(matching_classes) == 1, (
             'Several classes found for %s '
             'with session %s, model name: %s. Found: %s' %
-            (base_class, session, model_name, matching_classes))
+            (base_class, session, model_name, matching_classes)
+        )
+
         return matching_classes.pop()
 
-    def register_class(self, cls, replacing=None):
-        """ Register a class in the backend.
+    def _register_replace(self, replacing, entry):
+        """ add entry to the replaced_by part of replacing class(es) """
 
-        :param cls: the ConnectorUnit class class to register
-        :type cls: :py:class:`connector8.connector.ConnectorUnit`
-        :param replacing: optional, the ConnectorUnit class to replace
-        :type replacing: :py:class:`connector8.connector.ConnectorUnit`
-        """
+        if not hasattr(replacing, '__iter__'):
+            replacing = [replacing]
 
-        def register_replace(replacing_cls):
+        for replacing_class in replacing:
             for replaced_entry in self._class_entries:
-                if replaced_entry.cls is replacing_cls:
+                if replaced_entry.service_class is replacing_class:
                     replaced_entry.replaced_by.append(entry)
                     break
-            else:
-                raise ValueError('%s replaces an unregistered class: %s' %
-                                 (cls, replacing))
 
-        entry = _ConnectorUnitEntry(cls=cls,
-                                    replaced_by=[])
-        if replacing is not None:
-            if replacing is cls:
-                raise ValueError('%r cannot replace itself' % replacing)
-            if hasattr(replacing, '__iter__'):
-                for replacing_cls in replacing:
-                    register_replace(replacing_cls)
-            else:
-                register_replace(replacing)
+    def register_service_class(self, service_class, replacing=None):
+        """ Register a class in the backend.
+
+        :param service_class: the ConnectorUnit class class to register
+        :type service_class: :py:class:`connector.ConnectorUnit`
+        :param replacing: optional, the ConnectorUnit class to replace
+        :type replacing: :py:class:`connector.ConnectorUnit`
+        """
+
+        entry = Backend._ConnectorUnitEntry(
+            service_class=service_class,
+            replaced_by=[]
+        )
+
+        # register only if it is new
+        for entry in self._class_entries:
+            if service_class is entry.service_class:
+                return
+
+        # add replacing first thus never replace itself
+        if replacing:
+            self._register_replace(replacing, entry)
+
         self._class_entries.append(entry)
 
-    def __call__(self, cls=None, replacing=None):
+    def __call__(self, service_class=None, replacing=None):
         """ Backend decorator used to register a backend ConnectorUnit class
 
         For a backend ``magento`` declared like this::
@@ -337,15 +325,15 @@ class Backend(object):
         This is useful when working on an Odoo module which should
         alter the original behavior of a connector for an existing backend.
 
-        :param cls: the ConnectorUnit class class to register
-        :type cls: :py:class:`connector8.connector.ConnectorUnit`
+        :param service_class: the ConnectorUnit class class to register
+        :type service_class: :py:class:`connector.ConnectorUnit`
         :param replacing: optional, the ConnectorUnit class or a list of
             classes to replace
-        :type replacing: :py:class:`connector8.connector.ConnectorUnit`
+        :type replacing: :py:class:`connector.ConnectorUnit`
         """
 
-        if cls is None:
+        if service_class is None:
             return partial(self, replacing=replacing)
 
-        self.register_class(cls, replacing=replacing)
-        return cls
+        self.register_service_class(service_class, replacing=replacing)
+        return service_class
