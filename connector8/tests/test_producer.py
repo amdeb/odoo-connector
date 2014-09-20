@@ -70,8 +70,7 @@ class test_producers(common.TransactionCase):
 
         unlink_id = self.partner_unlink.id
         # has to use the old style because of 8.0 bug
-        #self.pool_model.unlink(self.cr, self.uid, [unlink_id])
-        self.partner_unlink.unlink([unlink_id])
+        self.pool_model.unlink(self.cr, self.uid, [unlink_id])
         self.assertEqual(self.recipient.record_id, unlink_id)
         on_record_unlink.unsubscribe(event)
 
