@@ -194,6 +194,18 @@ class Backend(object):
             return '<Backend \'%s\', \'%s\'>' % (self.name, self.version)
         return '<Backend \'%s\'>' % self.name
 
+    def _add_candidate(self, candidates, entry,
+                       base_class, session, model_name):
+        service_class = entry.service_class
+        is_installed = session.is_module_installed(
+            service_class.odoo_module_name
+        )
+        is_subclass = issubclass(service_class, base_class)
+        is_model_matched = service_class.match(model_name)
+
+        if is_installed and is_subclass and is_model_matched:
+            candidates.add(entry.service_class)
+
     def _get_classes(self, base_class, session, model_name):
         def follow_replacing(entries):
             candidates = set()
@@ -208,16 +220,8 @@ class Backend(object):
                 # It happens when the entries in 'replaced_by' are
                 # in modules not installed.
                 if not replacings:
-                    service_class = entry.service_class
-                    is_installed = session.is_module_installed(
-                        service_class.odoo_module_name
-                    )
-                    is_subclass = issubclass(service_class, base_class)
-                    is_model_matched = service_class.match(model_name)
-
-                    if is_installed and is_subclass and is_model_matched:
-                        candidates.add(entry.service_class)
-
+                    self._add_candidate(
+                        candidates, entry, base_class, session, model_name)
             return candidates
 
         matching_classes = follow_replacing(self._class_entries)
