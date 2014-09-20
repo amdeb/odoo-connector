@@ -6,8 +6,6 @@ import openerp.tests.common as common
 from ..backend import Backend
 from ..exception import ConnectorUnitError
 from ..connector import Binder, ConnectorUnit
-from ..unit.mapper import ExportMapper
-from ..unit.backend_adapter import BackendAdapter
 from ..session import ConnectorSession
 
 
@@ -101,9 +99,10 @@ class test_backend_register(common.TransactionCase):
 
     def setUp(self):
         super(test_backend_register, self).setUp()
-        self.service = 'calamitorium'
+        self.service_name = 'calamitorium'
         self.version = '1.14'
-        self.parent = Backend(self.service)
+        self.model_name = 'res.users'
+        self.parent = Backend(self.service_name)
         self.backend = Backend(parent=self.parent, version=self.version)
         self.session = ConnectorSession(self.cr, self.uid)
 
@@ -116,11 +115,11 @@ class test_backend_register(common.TransactionCase):
     def test_register_get_registered(self):
         """get the registered service class"""
         class BenderBinder(Binder):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         self.backend.register_service_class(BenderBinder)
         ref = self.backend.get_service_class(
-            BenderBinder, self.session, 'res.users'
+            BenderBinder, self.session, self.model_name
         )
 
         self.assertEqual(ref, BenderBinder)
@@ -128,11 +127,11 @@ class test_backend_register(common.TransactionCase):
     def test_register_get_base(self):
         """get the registered service class using base class"""
         class BenderBinder(Binder):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         self.backend.register_service_class(BenderBinder)
         ref = self.backend.get_service_class(
-            Binder, self.session, 'res.users'
+            Binder, self.session, self.model_name
         )
 
         self.assertEqual(ref, BenderBinder)
@@ -140,11 +139,11 @@ class test_backend_register(common.TransactionCase):
     def test_backend_decorator(self):
         """register a service using decorator"""
         @self.backend
-        class ZoidbergMapper(ExportMapper):
-            _model_name = 'res.users'
+        class ZoidbergMapper(ConnectorUnit):
+            _model_name = self.model_name
 
         ref = self.backend.get_service_class(
-            ExportMapper, self.session, 'res.users'
+            ZoidbergMapper, self.session, self.model_name
         )
         self.assertEqual(ref, ZoidbergMapper)
 
@@ -152,31 +151,64 @@ class test_backend_register(common.TransactionCase):
         """ It should get the parent's class when no class is defined"""
         @self.parent
         class FryBinder(Binder):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         ref = self.backend.get_service_class(
-            Binder, self.session, 'res.users'
+            Binder, self.session, self.model_name
         )
         self.assertEqual(ref, FryBinder)
 
     def test_no_register_error(self):
         """ Error when asking for a class and none is found"""
+        class FryBinder(Binder):
+            _model_name = self.model_name
+
         with self.assertRaises(ConnectorUnitError):
             self.backend.get_service_class(
-                BackendAdapter, self.session, 'res.users'
+                FryBinder, self.session, self.model_name
             )
+
+    def test_get_class_match_subclass(self):
+        """ search subclass when both base and sub registered """
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class LambdaYesUnit(LambdaUnit):
+            _model_name = self.model_name
+
+        matching_cls = self.backend.get_service_class(
+            LambdaYesUnit, self.session, self.model_name
+        )
+        self.assertEqual(matching_cls, LambdaYesUnit)
+
+    def test_get_class_match_baseclass(self):
+        """ searching base raise an exception when both base class
+        and subclass registered and"""
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class SubLambdaUnit(LambdaUnit):
+            _model_name = self.model_name
+
+        with self.assertRaises(ConnectorUnitError):
+            self.backend.get_service_class(
+                LambdaUnit, self.session, self.model_name)
 
     def test_get_class_installed_module(self):
         """ Only class from an installed module should be returned """
         class LambdaUnit(ConnectorUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend
         class LambdaYesUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         class LambdaNoUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         # trick the origin of the class, let it think
         # that it comes from the OpenERP module 'not installed module'
@@ -184,7 +216,7 @@ class test_backend_register(common.TransactionCase):
         self.backend(LambdaNoUnit)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, 'res.users'
+            LambdaUnit, self.session, self.model_name
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
@@ -192,18 +224,18 @@ class test_backend_register(common.TransactionCase):
         """ Returns the replacing ConnectorUnit"""
 
         class LambdaUnit(ConnectorUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend
         class LambdaNoUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend(replacing=LambdaNoUnit)
         class LambdaYesUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, 'res.users')
+            LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_replacing_uninstalled_module(self):
@@ -211,14 +243,14 @@ class test_backend_register(common.TransactionCase):
         uninstalled module """
 
         class LambdaUnit(ConnectorUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend
         class LambdaYesUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         class LambdaNoUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         # trick the origin of the class, let it think
         # that it comes from the OpenERP module 'not installed module'
@@ -226,41 +258,85 @@ class test_backend_register(common.TransactionCase):
         self.backend(LambdaNoUnit, replacing=LambdaYesUnit)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, 'res.users')
+            LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_replacing_diamond(self):
         """ Replace several classes in a diamond fashion """
         class LambdaUnit(ConnectorUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend
         class LambdaNoUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend
         class LambdaNo2Unit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend(replacing=(LambdaNoUnit, LambdaNo2Unit))
         class LambdaYesUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, 'res.users')
+            LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_replacing_self(self):
         """ A class should not be able to replace itself """
         class LambdaUnit(ConnectorUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         @self.backend
         class LambdaRecurseUnit(LambdaUnit):
-            _model_name = 'res.users'
+            _model_name = self.model_name
 
         self.backend.register_service_class(
             LambdaRecurseUnit, replacing=LambdaRecurseUnit
         )
 
         self.assertEqual(0, len(self.backend._class_entries[0].replaced_by))
+
+    def test_get_class_model_not_found(self):
+        """Not found should return None for unmatched model"""
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class LambdaUnitA(LambdaUnit):
+            _model_name = self.model_name
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, 'no.res.users')
+        self.assertIsNone(matching_cls)
+
+    def test_get_class_service_not_found(self):
+        """Not found should return None for unmatched service"""
+
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        class LambdaUnitA(LambdaUnit):
+            _model_name = self.model_name
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnitA, self.session, self.model_name)
+        self.assertIsNone(matching_cls)
+
+    def test_get_class_multiple_match(self):
+        """Multiple matches should raise an exception"""
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class LambdaUnitA(LambdaUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class LambdaUnitB(LambdaUnit):
+            _model_name = self.model_name
+
+        with self.assertRaises(ConnectorUnitError):
+            self.backend.get_service_class(
+                LambdaUnit, self.session, self.model_name)
