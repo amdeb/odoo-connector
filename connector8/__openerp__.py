@@ -15,6 +15,8 @@ This is a port of OCA connector to Odoo 8.0
           'queue/model_view.xml',
           'queue/queue_data.xml',
           'checkpoint/checkpoint_view.xml',
+          'connector_menu.xml',
+          'setting_view.xml',
           'res_partner_view.xml',
           ],
  'installable': True,
