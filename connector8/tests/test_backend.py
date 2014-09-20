@@ -263,4 +263,4 @@ class test_backend_register(common.TransactionCase):
             LambdaRecurseUnit, replacing=LambdaRecurseUnit
         )
 
-        self.assertEqual(0, len(self.backend._class_entries.replaced_by))
+        self.assertEqual(0, len(self.backend._class_entries[0].replaced_by))
