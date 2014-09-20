@@ -239,25 +239,25 @@ class Backend(object):
         :param model_name: the model name to search for
         :type: str
         """
+
         matching_classes = self._get_classes(
             base_class, session, model_name)
 
+        if len(matching_classes) == 1:
+            return matching_classes.pop()
+
         if not matching_classes:
-            raise ConnectorUnitError(
-                'No matching class found for %s '
-                'with session: %s, '
-                'model name: %s' %
-                (base_class, session, model_name)
-            )
+            return None
 
-        if len(matching_classes) != 1:
-            raise ConnectorUnitError(
-                'Several classes found for %s '
-                'with session %s, model name: %s. Found: %s' %
-                (base_class, session, model_name, matching_classes)
-            )
-
-        return matching_classes.pop()
+        # too many matches
+        error = '{} service classes found for class type {} ' \
+                'for session: {} and model name {}'.format(
+            len(matching_classes),
+            base_class,
+            session,
+            model_name
+        )
+        raise ConnectorUnitError(error)
 
     def _register_replace(self, replacing, entry):
         """ add entry to the replaced_by part of replacing class(es) """
