@@ -4,7 +4,7 @@ import unittest2
 
 import openerp.tests.common as common
 from ..backend import Backend
-from ..exception import NoConnectorUnitError
+from ..exception import ConnectorUnitError
 from ..connector import Binder, ConnectorUnit
 from ..unit.mapper import ExportMapper
 from ..unit.backend_adapter import BackendAdapter
@@ -158,7 +158,7 @@ class test_backend_register(common.TransactionCase):
 
     def test_no_register_error(self):
         """ Error when asking for a class and none is found"""
-        with self.assertRaises(NoConnectorUnitError):
+        with self.assertRaises(ConnectorUnitError):
             self.backend.get_service_class(
                 BackendAdapter, self.session, 'res.users'
             )
@@ -187,6 +187,7 @@ class test_backend_register(common.TransactionCase):
 
     def test_get_class_replacing_module(self):
         """ Returns the replacing ConnectorUnit"""
+
         class LambdaUnit(ConnectorUnit):
             _model_name = 'res.users'
 
@@ -205,6 +206,7 @@ class test_backend_register(common.TransactionCase):
     def test_get_class_replacing_uninstalled_module(self):
         """ Does not return the replacing ConnectorUnit of an
         uninstalled module """
+
         class LambdaUnit(ConnectorUnit):
             _model_name = 'res.users'
 
@@ -258,4 +260,4 @@ class test_backend_register(common.TransactionCase):
             LambdaRecurseUnit, replacing=LambdaRecurseUnit
         )
 
-        self.assertEqual(0, len(self.backend._class_entries))
+        self.assertEqual(0, len(self.backend._class_entries.replaced_by))

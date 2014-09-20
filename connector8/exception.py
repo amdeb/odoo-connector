@@ -24,7 +24,7 @@ class ConnectorException(RuntimeError):
     """ Base Exception for the connectors """
 
 
-class NoConnectorUnitError(ConnectorException):
+class ConnectorUnitError(ConnectorException):
     """ No ConnectorUnit has been found """
 
 

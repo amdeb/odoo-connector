@@ -20,7 +20,7 @@
 ##############################################################################
 from functools import partial
 from collections import namedtuple
-from .exception import NoConnectorUnitError
+from .exception import ConnectorUnitError
 
 
 class Backend(object):
@@ -214,10 +214,8 @@ class Backend(object):
                     )
                     is_subclass = issubclass(service_class, base_class)
                     is_model_matched = service_class.match(model_name)
-                    if (is_installed and
-                        is_subclass and
-                        is_model_matched
-                    ):
+
+                    if is_installed and is_subclass and is_model_matched:
                         candidates.add(entry.service_class)
 
             return candidates
@@ -245,16 +243,19 @@ class Backend(object):
             base_class, session, model_name)
 
         if not matching_classes:
-            raise NoConnectorUnitError('No matching class found for %s '
-                                       'with session: %s, '
-                                       'model name: %s' %
-                                       (base_class, session, model_name))
+            raise ConnectorUnitError(
+                'No matching class found for %s '
+                'with session: %s, '
+                'model name: %s' %
+                (base_class, session, model_name)
+            )
 
-        assert len(matching_classes) == 1, (
-            'Several classes found for %s '
-            'with session %s, model name: %s. Found: %s' %
-            (base_class, session, model_name, matching_classes)
-        )
+        if len(matching_classes) != 1:
+            raise ConnectorUnitError(
+                'Several classes found for %s '
+                'with session %s, model name: %s. Found: %s' %
+                (base_class, session, model_name, matching_classes)
+            )
 
         return matching_classes.pop()
 
@@ -285,8 +286,8 @@ class Backend(object):
         )
 
         # register only if it is new
-        for entry in self._class_entries:
-            if service_class is entry.service_class:
+        for registered in self._class_entries:
+            if service_class is registered.service_class:
                 return
 
         # add replacing first thus never replace itself
