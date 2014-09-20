@@ -34,7 +34,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from ..connector import ConnectorUnit, MetaConnectorUnit, Environment
-from ..exception import MappingError, NoConnectorUnitError
+from ..exception import MappingError, ConnectorUnitError
 
 _logger = logging.getLogger(__name__)
 
@@ -583,7 +583,7 @@ class Mapper(ConnectorUnit):
         try:
             mapper_child = self.get_connector_unit_for_model(
                 self._map_child_class, model_name)
-        except NoConnectorUnitError:
+        except ConnectorUnitError:
             # does not force developers to use a MapChild ->
             # will use the default one if not explicitely defined
             env = Environment(self.backend_record,

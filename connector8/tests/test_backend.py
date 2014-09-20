@@ -29,7 +29,7 @@ class test_backend(unittest2.TestCase):
         self.assertIsNone(backend.version)
 
     def test_new_backend_version(self):
-        """ Create a backend"""
+        """ Create a backend with version"""
         version = '1.14'
         backend = Backend(self.name, version=version)
         self.assertEqual(backend.name, self.name)
@@ -61,7 +61,7 @@ class test_backend(unittest2.TestCase):
         self.assertEqual(backend, registered)
 
     def test_get_backend_none(self):
-        """ Find a backend with a default """
+        """ Find a backend with a wrong name"""
         Backend(self.name)
         self.assertIsNone(Backend.get_backend("NotExistingName"))
 
@@ -114,6 +114,7 @@ class test_backend_register(common.TransactionCase):
         del self.backend._class_entries[:]
 
     def test_register_get_registered(self):
+        """get the registered service class"""
         class BenderBinder(Binder):
             _model_name = 'res.users'
 
@@ -125,6 +126,7 @@ class test_backend_register(common.TransactionCase):
         self.assertEqual(ref, BenderBinder)
 
     def test_register_get_base(self):
+        """get the registered service class using base class"""
         class BenderBinder(Binder):
             _model_name = 'res.users'
 
@@ -136,6 +138,7 @@ class test_backend_register(common.TransactionCase):
         self.assertEqual(ref, BenderBinder)
 
     def test_backend_decorator(self):
+        """register a service using decorator"""
         @self.backend
         class ZoidbergMapper(ExportMapper):
             _model_name = 'res.users'
