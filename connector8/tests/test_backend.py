@@ -135,7 +135,7 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertEqual(ref, ZoidbergMapper)
 
-    def test_no_register_error(self):
+    def test_no_register_none(self):
         """ Return None for unregistered service"""
         class FryBinder(ConnectorUnit):
             _model_name = self.model_name
@@ -161,19 +161,19 @@ class test_backend_service_registry(common.TransactionCase):
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_match_baseclass(self):
-        """ searching base raise an exception when both base class
-        and subclass registered and"""
+        """ search base class when both base and sub registered """
         @self.backend
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
 
         @self.backend
-        class SubLambdaUnit(LambdaUnit):
+        class LambdaYesUnit(LambdaUnit):
             _model_name = self.model_name
 
-        with self.assertRaises(ConnectorUnitError):
-            self.backend.get_service_class(
-                LambdaUnit, self.session, self.model_name)
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name
+        )
+        self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_installed_module(self):
         """ Only class from an installed module should be returned """
@@ -274,7 +274,7 @@ class test_backend_service_registry(common.TransactionCase):
 
         self.assertEqual(0, len(self.backend._class_entries[0].replaced_by))
 
-    def test_get_class_model_not_found(self):
+    def test_get_class_model_not_model(self):
         """Not found should return None for unmatched model"""
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
@@ -287,7 +287,7 @@ class test_backend_service_registry(common.TransactionCase):
             LambdaUnit, self.session, 'no.res.users')
         self.assertIsNone(matching_cls)
 
-    def test_get_class_service_not_found(self):
+    def test_get_class_service_unregistered(self):
         """Not found should return None for unmatched service"""
 
         @self.backend
@@ -303,6 +303,7 @@ class test_backend_service_registry(common.TransactionCase):
 
     def test_get_class_multiple_match(self):
         """Multiple matches should raise an exception"""
+        @self.backend
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
 
@@ -311,9 +312,13 @@ class test_backend_service_registry(common.TransactionCase):
             _model_name = self.model_name
 
         @self.backend
+        class LambdaUnitZ(LambdaUnit):
+            _model_name = self.model_name
+
+        @self.backend
         class LambdaUnitB(LambdaUnit):
             _model_name = self.model_name
 
-        with self.assertRaises(ConnectorUnitError):
-            self.backend.get_service_class(
-                LambdaUnit, self.session, self.model_name)
+        matching_cls =  self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name)
+        self.assertEqual(matching_cls, LambdaUnitB)

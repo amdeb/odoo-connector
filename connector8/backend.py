@@ -39,11 +39,10 @@ class Backend(object):
 
     .. attribute:: parent
 
-        A parent backend. When no
-        :py:class:`connector.ConnectorUnit`
-        is found for a backend, it will search it in the `parent`.
+        A parent backend. When no :py:class:`connector.ConnectorUnit`
+        is found for a backend, its `parent` will be searched
 
-    The Backends structure is a key part of the framework,
+    The Backend structure is a key part of the framework,
     but is rather simple.
 
     * A ``Backend`` instance holds a registry of
@@ -51,8 +50,8 @@ class Backend(object):
     * It can return an appropriate
       :py:class:`connector.ConnectorUnit` to use for a task
     * If no :py:class:`connector.ConnectorUnit`
-      is registered for a task, it will ask it to its direct parent
-      (and so on)
+      is registered for a task, its parent and parent's parent
+      and so on will be searched.
 
     The Backends support 2 different extension mechanisms. One is more
     horizontal - across the versions - and the other would be more vertical
@@ -98,10 +97,10 @@ class Backend(object):
         class Synchronizer1700(Synchronizer):
             _model_name = 'res.partner'
 
-    Here, the called on :py:meth:`~get_class` of ``magento1700``
+    Here, the called on :py:meth:`~get_service_class` of ``magento1700``
     would return::
 
-        magento1700.get_class(Synchronizer, session, 'res.partner')
+        magento1700.get_service_class(Synchronizer, session, 'res.partner')
         # => Synchronizer1700
         magento1700.get_class(Mapper, session, 'res.partner')
         # => Mapper
@@ -110,7 +109,7 @@ class Backend(object):
     is able to extend or replace the behavior of its parent.
 
     .. note:: when using the framework, you won't need to call
-              :py:meth:`~get_class`, usually, you will call
+              :py:meth:`~get_service_class`, usually, you will call
               :py:meth:`connector.Environment.get_connector_unit`.
 
     The vertical extension is the one you will probably use the most, because
@@ -130,6 +129,9 @@ class Backend(object):
         @magento(replacing=ImportMapper)
         class AdvancedImportMapper(ImportMapper):
             _model_name = 'product.product'
+
+    ..note:: if two or more matching service classes found for a model,
+             the last registered service is returned.
     """
 
     _backend_registry = set()
@@ -247,25 +249,18 @@ class Backend(object):
         matching_classes = self._get_classes(
             base_class, session, model_name)
 
-        if len(matching_classes) == 1:
-            return matching_classes.pop()
-
         if not matching_classes:
             return None
 
-        # too many matches
-        error_template = '{0} service classes found for class type {1} ' \
-            'for session: {2} and model name {3}. ' \
-            'Matched classes including 1st: {4}.  2nd: {5}'
-        error_message = error_template.format(
-            len(matching_classes),
-            base_class,
-            session,
-            model_name,
-            matching_classes.pop(),
-            matching_classes.pop()
-        )
-        raise ConnectorUnitError(error_message)
+        if len(matching_classes) == 1:
+            return matching_classes.pop()
+
+        # multiple match, find the last matching class in registry
+        for entry in reversed(self._class_entries):
+            if entry in matching_classes:
+                return entry
+        else:
+            return None
 
     def _register_replace(self, replacing, entry):
         """ add entry to the replaced_by part of replacing class(es) """
