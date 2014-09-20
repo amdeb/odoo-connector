@@ -112,7 +112,7 @@ class test_backend_service_registry(common.TransactionCase):
         del self.parent._class_entries[:]
         del self.backend._class_entries[:]
 
-    def test_register_get_registered(self):
+    def test_register_service_class(self):
         """get the registered service class"""
         class BenderBinder(ConnectorUnit):
             _model_name = self.model_name
