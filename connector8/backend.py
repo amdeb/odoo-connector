@@ -19,7 +19,6 @@
 #
 ##############################################################################
 from functools import partial
-from collections import namedtuple
 
 
 class Backend(object):
