@@ -158,14 +158,6 @@ class Backend(object):
         else:
             return default
 
-    # Represents an entry for a service class in a backend
-    # the first element is a service class while the
-    # second is a list of other service classes that replace
-    # this service class
-    _ConnectorUnitEntry = namedtuple(
-        '_ConnectorUnitEntry',  ['service_class', 'replaced_by']
-    )
-
     def __init__(self, name=None, version=None, parent=None):
         if name is None and parent is None:
             raise ValueError('A name or a parent is expected')
@@ -174,8 +166,8 @@ class Backend(object):
         self.version = version
         self.parent = parent
 
-        #  a list of registered service classes
-        # that are instances of _ConnectorUnitEntry
+        # a list of registered service classes
+        # use a list to record the timing of registration
         self._class_entries = []
 
         Backend._backend_registry.add(self)
@@ -185,53 +177,22 @@ class Backend(object):
         return (self.name == name and
                 self.version == version)
 
-    def __str__(self):
-        if self.version:
-            return 'Backend(\'%s\', \'%s\')' % (self.name, self.version)
-        return 'Backend(\'%s\')' % self.name
-
     def __repr__(self):
+        template_version = "<Backend('{0}', '{1}'>"
         if self.version:
-            return '<Backend \'%s\', \'%s\'>' % (self.name, self.version)
-        return '<Backend \'%s\'>' % self.name
+            return template_version.format(self.name, self.version)
 
-    def _add_candidate(self, candidates, entry,
-                       base_class, session, model_name):
-        service_class = entry.service_class
+        template = "Backend<'{0}'>"
+        return template.format(self.name)
+
+    def _is_matched(self, service_class, base_class, session, model_name):
         is_installed = session.is_module_installed(
             service_class.odoo_module_name
         )
         is_subclass = issubclass(service_class, base_class)
         is_model_matched = service_class.match(model_name)
 
-        if is_installed and is_subclass and is_model_matched:
-            candidates.add(entry.service_class)
-
-    def _get_classes(self, base_class, session, model_name):
-        def follow_replacing(entries):
-            candidates = set()
-            for entry in entries:
-                replacings = None
-                if entry.replaced_by:
-                    replacings = follow_replacing(entry.replaced_by)
-                    if replacings:
-                        candidates.update(replacings)
-                # If all the classes supposed to replace the current class
-                # have been discarded, the current class is a candidate.
-                # It happens when the entries in 'replaced_by' are
-                # in modules not installed.
-                if not replacings:
-                    self._add_candidate(
-                        candidates, entry, base_class, session, model_name)
-            return candidates
-
-        matching_classes = follow_replacing(self._class_entries)
-        if not matching_classes and self.parent:
-            matching_classes = self.parent._get_classes(
-                base_class, session, model_name
-            )
-
-        return matching_classes
+        return is_installed and is_subclass and is_model_matched
 
     def get_service_class(self, base_class, session, model_name):
         """ Find a matching subclass of ``base_class`` from the registered
@@ -245,38 +206,21 @@ class Backend(object):
         :type: str
         """
 
-        matching_classes = self._get_classes(
-            base_class, session, model_name)
-
-        if not matching_classes:
-            return None
-
-        if len(matching_classes) == 1:
-            return matching_classes.pop()
-
-        # second part is unhashable list, compare service class only
-        service_classes = [
-            item.service_class for item in matching_classes
-        ]
-
-        # multiple match, find the last matching class in registry
         for entry in reversed(self._class_entries):
-            if entry.service_class in service_classes:
+            if self._is_matched(entry, base_class, session, model_name):
                 return entry
         else:
             return None
 
-    def _register_replace(self, replacing, entry):
+    def _register_remove(self, replacing):
         """ add entry to the replaced_by part of replacing class(es) """
 
         if not hasattr(replacing, '__iter__'):
             replacing = [replacing]
 
-        for replacing_class in replacing:
-            for replaced_entry in self._class_entries:
-                if replaced_entry.service_class is replacing_class:
-                    replaced_entry.replaced_by.append(entry)
-                    break
+        self._class_entries = [
+            item for item in self._class_entries if item not in replacing
+        ]
 
     def register_service_class(self, service_class, replacing=None):
         """ Register a class in the backend.
@@ -287,21 +231,10 @@ class Backend(object):
         :type replacing: :py:class:`connector.ConnectorUnit`
         """
 
-        entry = Backend._ConnectorUnitEntry(
-            service_class=service_class,
-            replaced_by=[]
-        )
-
-        # register only if it is new
-        for registered in self._class_entries:
-            if service_class is registered.service_class:
-                return
-
-        # add replacing first thus never replace itself
         if replacing:
-            self._register_replace(replacing, entry)
+            self._register_remove(replacing)
 
-        self._class_entries.append(entry)
+        self._class_entries.append(service_class)
 
     def __call__(self, service_class=None, replacing=None):
         """ Backend decorator used to register a backend ConnectorUnit class

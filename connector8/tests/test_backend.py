@@ -70,26 +70,16 @@ class test_backend(unittest2.TestCase):
             "NotExistingName", version='1.14', default=backend)
         self.assertEqual(backend, registered)
 
-    def test_backend_str(self):
-        backend = Backend(self.name)
-        expected = 'Backend(\'%s\')' % self.name
-        self.assertEqual(expected, str(backend))
-
-    def test_backend_str_version(self):
-        version = '1.14'
-        backend = Backend(self.name, version)
-        expected = 'Backend(\'%s\', \'%s\')' % (self.name, version)
-        self.assertEqual(expected, str(backend))
-
     def test_backend_repr(self):
         backend = Backend(self.name)
-        expected = '<Backend \'%s\'>' % self.name
+        expected = "Backend<'{0}'>" .format(self.name)
         self.assertEqual(expected, repr(backend))
 
     def test_backend_repr_version(self):
+        template_version = "<Backend('{0}', '{1}'>"
         version = '1.14'
         backend = Backend(self.name, version)
-        expected = '<Backend \'%s\', \'%s\'>' % (self.name, version)
+        expected = template_version.format(self.name, version)
         self.assertEqual(expected, repr(backend))
 
 
@@ -238,7 +228,7 @@ class test_backend_service_registry(common.TransactionCase):
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_replacing_two(self):
-        """ Replace several classes in a diamond fashion """
+        """ Replace several classes"""
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
 
@@ -273,20 +263,18 @@ class test_backend_service_registry(common.TransactionCase):
 
         self.assertEqual(0, len(self.backend._class_entries[0].replaced_by))
 
-    def test_get_class_model_not_model(self):
-        """Not found should return None for unmatched model"""
-        class LambdaUnit(ConnectorUnit):
-            _model_name = self.model_name
+    def test_get_class_not_existing_model(self):
+        """Not found should return None for unmatched model name"""
 
         @self.backend
-        class LambdaUnitA(LambdaUnit):
+        class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
             LambdaUnit, self.session, 'no.res.users')
         self.assertIsNone(matching_cls)
 
-    def test_get_class_service_unregistered(self):
+    def test_get_class_service_not_registered(self):
         """Not found should return None for unmatched service"""
 
         @self.backend
@@ -301,7 +289,7 @@ class test_backend_service_registry(common.TransactionCase):
         self.assertIsNone(matching_cls)
 
     def test_get_class_multiple_match(self):
-        """Multiple matches should raise an exception"""
+        """Multiple matches should return the last-added"""
         @self.backend
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
@@ -321,3 +309,4 @@ class test_backend_service_registry(common.TransactionCase):
         matching_cls = self.backend.get_service_class(
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaUnitB)
+
