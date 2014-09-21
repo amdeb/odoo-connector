@@ -24,10 +24,16 @@ class TestBackend(unittest2.TestCase):
         backend = Backend(self.name)
         self.assertEqual(backend.name, self.name)
 
-    def test_new_backend_no_name(self):
-        """ Should raise an error because no service or parent is defined"""
+    def test_new_backend_invalid_name(self):
+        """ Should raise an error because name should be a string"""
         with self.assertRaises(ValueError):
-            Backend()
+            Backend(33)
+
+    def test_new_backend_invalid_backend(self):
+        """ Should raise an error because parent should be an instance
+        of Backend"""
+        with self.assertRaises(ValueError):
+            Backend(self.name, object)
 
     def test_backend_parent_eq(self):
         """ Create a backend"""
@@ -149,7 +155,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_service_class_for_baseclass(self):
+    def test_get_service_class_for_base_class(self):
         """ search base class when both base and sub registered """
         @self.backend
         class LambdaUnit(ConnectorUnit):

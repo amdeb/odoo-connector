@@ -129,6 +129,8 @@ class Backend(object):
     def __init__(self, name, parent=None):
         if not isinstance(name, basestring):
             raise ValueError('A backend name (a string) is expected')
+        if not isinstance(parent, self.__class__):
+            raise ValueError('A parent must be an instance of Backend')
 
         self.name = name
         self.parent = parent
@@ -144,6 +146,7 @@ class Backend(object):
         if isinstance(other, self.__class__):
             return ((self.name == other.name)
                     and (self.parent == other.parent))
+        return False
 
     def __repr__(self):
         template = "<{0}: {1} {2}>"
@@ -161,9 +164,21 @@ class Backend(object):
             if is_installed and is_subclass and is_model_matched:
                 return entry
 
-    def get_service_class(self, base_class, session, model_name):
+    def _get_service_class(self, base_class, session, model_name):
         """ Find a matching subclass of ``base_class`` from the registered
         service classes.If not found, try replaced service classes
+        """
+
+        matched = self._get_matched(
+            self._class_entries, base_class, session, model_name)
+        if not matched:
+            matched = self._get_matched(
+                self._replaced_entries, base_class, session, model_name)
+        return matched
+
+    def get_service_class(self, base_class, session, model_name):
+        """ Find a matching subclass of ``base_class`` from the registered
+        service classes.If not found, try parent.
 
         :param base_class: class (and its subclass) to search in the registry
         :type base_class: :py:class:`connector.ConnectorUnit`
@@ -173,11 +188,10 @@ class Backend(object):
         :type: str
         """
 
-        matched = self._get_matched(
-            self._class_entries, base_class, session, model_name)
-        if not matched:
-            matched = self._get_matched(
-                self._replaced_entries, base_class, session, model_name)
+        matched = self._get_service_class(base_class, session, model_name)
+        if not matched and self.parent:
+            matched = self.parent.get_service_class(
+                base_class, session, model_name)
         return matched
 
     def replace_service_class(self, replacing):
