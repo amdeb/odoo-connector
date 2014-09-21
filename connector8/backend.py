@@ -129,7 +129,7 @@ class Backend(object):
     def __init__(self, name, parent=None):
         if not isinstance(name, basestring):
             raise ValueError('A backend name (a string) is expected')
-        if not isinstance(parent, self.__class__):
+        if parent and not isinstance(parent, self.__class__):
             raise ValueError('A parent must be an instance of Backend')
 
         self.name = name
