@@ -195,7 +195,7 @@ class Backend(object):
             is_subclass = issubclass(entry, base_class)
             is_model_matched = entry.match(model_name)
 
-            if  is_installed and is_subclass and is_model_matched:
+            if is_installed and is_subclass and is_model_matched:
                 return entry
 
     def get_service_class(self, base_class, session, model_name):
