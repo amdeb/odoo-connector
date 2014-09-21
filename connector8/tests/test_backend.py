@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import unittest2
-
 import openerp.tests.common as common
+
 from ..backend import Backend
-from ..exception import ConnectorUnitError
 from ..connector import ConnectorUnit
 from ..session import ConnectorSession
 
@@ -319,6 +318,6 @@ class test_backend_service_registry(common.TransactionCase):
         class LambdaUnitB(LambdaUnit):
             _model_name = self.model_name
 
-        matching_cls =  self.backend.get_service_class(
+        matching_cls = self.backend.get_service_class(
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaUnitB)

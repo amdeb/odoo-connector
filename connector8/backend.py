@@ -20,7 +20,6 @@
 ##############################################################################
 from functools import partial
 from collections import namedtuple
-from .exception import ConnectorUnitError
 
 
 class Backend(object):
@@ -255,9 +254,14 @@ class Backend(object):
         if len(matching_classes) == 1:
             return matching_classes.pop()
 
+        # second part is unhashable list, compare service class only
+        service_classes = [
+            item.service_class for item in matching_classes
+        ]
+
         # multiple match, find the last matching class in registry
         for entry in reversed(self._class_entries):
-            if entry in matching_classes:
+            if entry.service_class in service_classes:
                 return entry
         else:
             return None
