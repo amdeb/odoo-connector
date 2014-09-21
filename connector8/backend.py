@@ -1,61 +1,39 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-#    Author: Guewen Baconnier
-#    Copyright 2013 Camptocamp SA
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
+
 from functools import partial
 
 
 class Backend(object):
-    """ A backend represents a system to interact with,
-    like Magento, Prestashop, Redmine, ...
+    """ A backend represents a system to be integrated with,
+    like Amazon, eBay, Magento, Prestashop, ...
 
-    It owns 3 properties:
+    It owns 2 properties:
 
     .. attribute:: name
 
-        Name of the service, for instance 'magento'
-
-    .. attribute:: version
-
-        The version of the service. For instance: '1.7'
+        Name of the service, for instance 'magento' or 'magento 1.7'
 
     .. attribute:: parent
 
-        A parent backend. When no :py:class:`connector.ConnectorUnit`
-        is found for a backend, its `parent` will be searched
+        A parent backend of a backend. It is optional.
 
-    The Backend structure is a key part of the framework,
-    but is rather simple.
+    The Backend structure is rather simple.
 
+    * The Backend maintains a registry of all backends that
+        can be searched using static class method
+        :py:meth:`Backend.get_backend`
     * A ``Backend`` instance holds a registry of
-      :py:class:`connector.ConnectorUnit` classes
-    * It can return an appropriate
-      :py:class:`connector.ConnectorUnit` to use for a task
-    * If no :py:class:`connector.ConnectorUnit`
-      is registered for a task, its parent and parent's parent
-      and so on will be searched.
+        service classes that are sub class of the
+        :py:class:`connector.ConnectorUnit` class
+    * It returns an installed service class
+        for a specified base class and a model name
+    * When a service class is not found in a backend,
+        the backend's `parent` will be searched if the backend
+        has a parent defined. The search goes up to the backend parent
+        chain until a service class is found or no parent is available.
 
-    The Backends support 2 different extension mechanisms. One is more
-    horizontal - across the versions - and the other would be more vertical
-    as it allows to modify the behavior for 1 version of backend.
 
-    For the sake of the example, let's say we have theses backend versions::
+    For exmaple, let's say we have theses backend versions::
 
                  <Magento>
                      |
@@ -68,17 +46,16 @@ class Backend(object):
     And here is the way they are declared in Python::
 
         magento = Backend('magento')
-        magento1700 = Backend(parent=magento, version='1.7')
-        magento2000 = Backend(parent=magento, version='2.0')
+        magento1700 = Backend('magento 1.7', magento)
+        magento2000 = Backend('magento 2.0', magento)
 
-        magento_specific = Backend(parent=magento1700, version='1.7-specific')
+        magento_specific = Backend('magento 1.7-specific', magento1700, )
 
-    In the graph above, ``<Magento>`` will hold all the classes shared between
-    all the versions.  Each Magento version (``<Magento 1.7>``, ``<Magento
-    2.0>``) will use the classes defined on ``<Magento>``, excepted if they
-    registered their own ones instead. That's the same for ``<Magento with
-    specific>`` but this one contains customizations which are specific to an
-    instance (typically you want specific mappings for one instance).
+    In the graph above, ``<Magento>`` can bu used to hold all the
+    service classes shared between all its child versions.
+    When serach a service class, the current backend is searched. If
+    the current backend doesn't have the service class, parent backend
+    will be searched.
 
     Here is how you would register classes on ``<Magento>`` and another on
     ``<Magento 1.7>``::
@@ -100,36 +77,28 @@ class Backend(object):
 
         magento1700.get_service_class(Synchronizer, session, 'res.partner')
         # => Synchronizer1700
-        magento1700.get_class(Mapper, session, 'res.partner')
+        magento1700.get_service_class(Mapper, session, 'res.partner')
         # => Mapper
 
-    This is the vertical extension mechanism, it says that each child version
-    is able to extend or replace the behavior of its parent.
+    ..note:: :py:meth:the `~get_serivce_class` search most recently
+            registered service class first. It stops searching when
+            the first service_class matches searching conditions.
 
-    .. note:: when using the framework, you won't need to call
-              :py:meth:`~get_service_class`, usually, you will call
-              :py:meth:`connector.Environment.get_connector_unit`.
+    The backend supports `replacing` operation: a replaced
+    service class is searched after all normal service classes are
+    search. There are two ways to replace a service class: call
+    a backend's `~replace_serivce_class` or put as a parameter
+    when register a service class.
 
-    The vertical extension is the one you will probably use the most, because
-    most of the things you will change concern your custom adaptations or
-    different behaviors between the versions of the backend.
-
-    However, some time, we need to change the behavior of a connector, by
-    installing an addon. For example, say that we already have an
-    ``ImportMapper`` for the products in the Magento Connector. We create a
-    generic addon to handle the catalog in a more advanced manner. We
-    redefine an ``AdvancedImportMapper``, which should be used when
-    the addon is installed. This is the horizontal extension mechanism.
-
-    Replace a :py:class:`connector.ConnectorUnit` by another one
-    in a backend::
+        megento.replace_service_class(ImportMapper)
 
         @magento(replacing=ImportMapper)
         class AdvancedImportMapper(ImportMapper):
             _model_name = 'product.product'
 
-    ..note:: if two or more matching service classes found for a model,
-             the last registered service is returned.
+    The backend' :py:meth:`remove_service_class` removes a registered
+    service class.
+
     """
 
     _backend_registry = set()
@@ -140,55 +109,49 @@ class Backend(object):
         Backend._backend_registry.clear()
 
     @staticmethod
-    def get_backend(name, version=None, default=None):
+    def get_backend(name, default=None):
         """ Return an instance of :py:class:`backend.Backend`
-        for a ``name`` and a ``version``. If not found,
-        return default or None if no default specified
+        for a ``name``. If not found, return default or
+        None if no default specified
 
         :param name: name of the service to return
         :type name: str
-        :param version: version of the service to return
-        :type version: str
+        :param default: a default returned if the specified name is not found
+        :type default: Backend
         """
 
         for backend in Backend._backend_registry:
-            if backend.match(name, version):
+            if backend.name == name:
                 return backend
         else:
             return default
 
-    def __init__(self, name=None, version=None, parent=None):
-        if name is None and parent is None:
-            raise ValueError('A name or a parent is expected')
+    def __init__(self, name, parent=None):
+        if not isinstance(name, basestring):
+            raise ValueError('A backend name (a string) is expected')
 
-        self.name = name if name is not None else parent.name
-        self.version = version
+        self.name = name
         self.parent = parent
 
-        # a list of registered service classes
-        # use a list to record the timing of registration
+        # a list of normal registered service classes
         self._class_entries = []
+        # a list of replaced classes that are search after normal classes
         self._replaced_entries = []
 
         Backend._backend_registry.add(self)
 
-    def match(self, name, version):
-        """Used to find the backend for a service and a version"""
-        return (self.name == name and
-                self.version == version)
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return ((self.name == other.name)
+                    and (self.parent == other.parent))
 
     def __repr__(self):
-        template_version = "<Backend('{0}', '{1}'>"
-        if self.version:
-            return template_version.format(self.name, self.version)
-
-        template = "Backend<'{0}'>"
-        return template.format(self.name)
+        template = "<{0}: {1} {2}>"
+        return template.format(self.__class__, self.name, self.parent)
 
     def _get_matched(self, entries, base_class, session, model_name):
 
         for entry in entries:
-
             is_installed = session.is_module_installed(
                 entry.odoo_module_name
             )
@@ -200,7 +163,7 @@ class Backend(object):
 
     def get_service_class(self, base_class, session, model_name):
         """ Find a matching subclass of ``base_class`` from the registered
-        classes.
+        service classes.If not found, try replaced service classes
 
         :param base_class: class (and its subclass) to search in the registry
         :type base_class: :py:class:`connector.ConnectorUnit`
@@ -217,10 +180,10 @@ class Backend(object):
                 self._replaced_entries, base_class, session, model_name)
         return matched
 
-    def _register_replace(self, replacing):
+    def replace_service_class(self, replacing):
         """ remove from class entries; add to replaced entries"""
 
-        if not hasattr(replacing, '__iter__'):
+        if not hasattr(replacing, '__contains__'):
             replacing = [replacing]
 
         for replaced in replacing:
@@ -229,8 +192,20 @@ class Backend(object):
             if replaced not in self._replaced_entries:
                 self._replaced_entries.insert(0, replaced)
 
+    def remove_service_class(self, service_class):
+        """ remove the service class from both entries """
+
+        if service_class in self._class_entries:
+            self._class_entries.remove(service_class)
+        if service_class in self._replaced_entries:
+            self._replaced_entries.remove(service_class)
+
     def register_service_class(self, service_class, replacing=None):
         """ Register a class in the backend.
+
+        First move all replacing service class into replaced entries.
+        If the new service_class exists in any entries, remove it.
+        Then add the service class to the front.
 
         :param service_class: the ConnectorUnit class class to register
         :type service_class: :py:class:`connector.ConnectorUnit`
@@ -239,11 +214,9 @@ class Backend(object):
         """
 
         if replacing:
-            self._register_replace(replacing)
+            self.replace_service_class(replacing)
 
-        if service_class in self._class_entries:
-            return
-
+        self.remove_service_class(service_class)
         self._class_entries.insert(0, service_class)
 
     def __call__(self, service_class=None, replacing=None):

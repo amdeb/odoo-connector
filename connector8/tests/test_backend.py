@@ -8,53 +8,47 @@ from ..connector import ConnectorUnit
 from ..session import ConnectorSession
 
 
-class test_backend(unittest2.TestCase):
+class TestBackend(unittest2.TestCase):
     """ Test Backend """
 
     def setUp(self):
-        super(test_backend, self).setUp()
+        super(TestBackend, self).setUp()
         self.name = 'calamitorium'
 
     def tearDown(self):
-        super(test_backend, self).tearDown()
+        super(TestBackend, self).tearDown()
         Backend._clear_backend_registry()
 
     def test_new_backend(self):
         """ Create a backend"""
         backend = Backend(self.name)
         self.assertEqual(backend.name, self.name)
-        self.assertIsNone(backend.version)
 
-    def test_new_backend_version(self):
-        """ Create a backend with version"""
-        version = '1.14'
-        backend = Backend(self.name, version=version)
-        self.assertEqual(backend.name, self.name)
-        self.assertEqual(backend.version, version)
-
-    def test_parent_name(self):
-        """ Bind the backend to a parent backend"""
-        version = '1.14'
-        backend = Backend(self.name)
-        child_backend = Backend(parent=backend, version=version)
-        self.assertEqual(child_backend.name, backend.name)
-
-    def test_no_name_no_parent(self):
+    def test_new_backend_no_name(self):
         """ Should raise an error because no service or parent is defined"""
         with self.assertRaises(ValueError):
-            Backend(version='1.14')
+            Backend()
+
+    def test_backend_parent_eq(self):
+        """ Create a backend"""
+        parent = Backend(self.name)
+        child_name = self.name + ' 1.7'
+        child_one = Backend(child_name, parent)
+        child_two = Backend(child_name, parent)
+        self.assertEqual(child_one, child_two)
+
+    def test_backend_parent_not_eq(self):
+        """ Create a backend"""
+        parent = Backend(self.name)
+        child_name = self.name + ' 1.7'
+        child_one = Backend(child_name, parent)
+        child_two = Backend(child_name)
+        self.assertNotEqual(child_one, child_two)
 
     def test_get_backend(self):
         """ Find a backend """
         backend = Backend(self.name)
         registered = Backend.get_backend(self.name)
-        self.assertEqual(backend, registered)
-
-    def test_get_backend_version(self):
-        """ Find a backend with a version """
-        parent = Backend(self.name)
-        backend = Backend(parent=parent, version='1.14')
-        registered = Backend.get_backend(self.name, version='1.14')
         self.assertEqual(backend, registered)
 
     def test_get_backend_none(self):
@@ -64,30 +58,23 @@ class test_backend(unittest2.TestCase):
 
     def test_get_backend_default(self):
         """ Find a backend with a default """
-        version = '1.14'
-        backend = Backend(self.name, version)
+        backend = Backend(self.name)
         registered = Backend.get_backend(
-            "NotExistingName", version='1.14', default=backend)
+            "NotExistingName", backend)
         self.assertEqual(backend, registered)
 
     def test_backend_repr(self):
         backend = Backend(self.name)
-        expected = "Backend<'{0}'>" .format(self.name)
-        self.assertEqual(expected, repr(backend))
-
-    def test_backend_repr_version(self):
-        template_version = "<Backend('{0}', '{1}'>"
-        version = '1.14'
-        backend = Backend(self.name, version)
-        expected = template_version.format(self.name, version)
+        expected = "<{0}: {1} {2}>".format(
+            backend.__class__, self.name, None)
         self.assertEqual(expected, repr(backend))
 
 
-class test_backend_service_registry(common.TransactionCase):
+class TestBackendServiceRegistry(common.TransactionCase):
     """ Test registration of classes on the Backend"""
 
     def setUp(self):
-        super(test_backend_service_registry, self).setUp()
+        super(TestBackendServiceRegistry, self).setUp()
         self.service_name = 'calamitorium'
         self.version = '1.14'
         self.model_name = 'res.users'
@@ -96,7 +83,7 @@ class test_backend_service_registry(common.TransactionCase):
         self.session = ConnectorSession(self.cr, self.uid)
 
     def tearDown(self):
-        super(test_backend_service_registry, self).tearDown()
+        super(TestBackendServiceRegistry, self).tearDown()
         Backend._clear_backend_registry()
 
     def test_register_service_class(self):
@@ -122,7 +109,7 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertEqual(ref, ZoidbergMapper)
 
-    def test_no_register_none(self):
+    def test_get_service_class_unregistered_none(self):
         """ Return None for unregistered service"""
         class FryBinder(ConnectorUnit):
             _model_name = self.model_name
@@ -132,7 +119,23 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertIsNone(matching_cls)
 
-    def test_get_class_match_subclass(self):
+    def test_get_service_class_from_parent(self):
+        """ search a class that only exists in a backend's parent """
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.parent
+        class LambdaYesUnit(LambdaUnit):
+            _model_name = self.model_name
+
+        matching_cls = self.backend.get_service_class(
+            LambdaYesUnit, self.session, self.model_name
+        )
+        self.assertEqual(matching_cls, LambdaYesUnit)
+
+
+    def test_get_service_class_for_subclass(self):
         """ search subclass when both base and sub registered """
         @self.backend
         class LambdaUnit(ConnectorUnit):
@@ -147,7 +150,7 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_match_baseclass(self):
+    def test_get_service_class_for_baseclass(self):
         """ search base class when both base and sub registered """
         @self.backend
         class LambdaUnit(ConnectorUnit):
@@ -162,7 +165,7 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_not_installed_module(self):
+    def test_get_service_class_not_installed_module(self):
         """ Only class from an installed module should be returned """
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
@@ -184,7 +187,7 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_replacing_module(self):
+    def test_get_service_class_replacing_module(self):
         """ Returns the replacing ConnectorUnit"""
 
         class LambdaUnit(ConnectorUnit):
@@ -202,7 +205,7 @@ class test_backend_service_registry(common.TransactionCase):
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_replacing_uninstalled_module(self):
+    def test_get_service_class_replacing_uninstalled_module(self):
         """ Does not return the replacing ConnectorUnit of an
         uninstalled module """
 
@@ -225,7 +228,7 @@ class test_backend_service_registry(common.TransactionCase):
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_replacing_two(self):
+    def test_get_service_class_replacing_two(self):
         """ Replace several classes"""
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
@@ -246,7 +249,7 @@ class test_backend_service_registry(common.TransactionCase):
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_replacing_self(self):
+    def test_get_service_class_replacing_self(self):
         """ Replacing oneself adds one as the last registered"""
 
         class LambdaUnit(ConnectorUnit):
@@ -268,7 +271,7 @@ class test_backend_service_registry(common.TransactionCase):
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaRecursiveUnit)
 
-    def test_get_class_not_existing_model(self):
+    def test_get_service_class_not_existing_model(self):
         """Not found should return None for unmatched model name"""
 
         @self.backend
@@ -279,21 +282,7 @@ class test_backend_service_registry(common.TransactionCase):
             LambdaUnit, self.session, 'no.res.users')
         self.assertIsNone(matching_cls)
 
-    def test_get_class_service_not_registered(self):
-        """Not found should return None for unmatched service"""
-
-        @self.backend
-        class LambdaUnit(ConnectorUnit):
-            _model_name = self.model_name
-
-        class LambdaUnitA(LambdaUnit):
-            _model_name = self.model_name
-
-        matching_cls = self.backend.get_service_class(
-            LambdaUnitA, self.session, self.model_name)
-        self.assertIsNone(matching_cls)
-
-    def test_get_class_multiple_match(self):
+    def test_get_service_class_multiple_match(self):
         """Multiple matches should return the last-added"""
         @self.backend
         class LambdaUnit(ConnectorUnit):
@@ -314,3 +303,64 @@ class test_backend_service_registry(common.TransactionCase):
         matching_cls = self.backend.get_service_class(
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaUnitB)
+
+    def test_replace_service_class(self):
+        """ should return normal class """
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class LambdaUnitA(LambdaUnit):
+            _model_name = self.model_name
+
+        @self.backend
+        class LambdaUnitB(LambdaUnit):
+            _model_name = self.model_name
+
+        self.backend.replace_service_class(LambdaUnitB)
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name)
+        self.assertEqual(matching_cls, LambdaUnitA)
+
+    def test_replace_service_class_searched(self):
+        """ replaced service class is still searched """
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        self.backend.replace_service_class(LambdaUnit)
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name)
+        self.assertEqual(matching_cls, LambdaUnit)
+
+    def test_remove_service_class(self):
+        """ replaced service class is still searched """
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        self.backend.remove_service_class(LambdaUnit)
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name)
+        self.assertIsNone(matching_cls)
+
+    def test_remove_service_class_with_replaced(self):
+        """ replaced service class can be removed """
+        @self.backend
+        class LambdaUnit(ConnectorUnit):
+            _model_name = self.model_name
+
+        @self.backend(replacing=LambdaUnit)
+        class LambdaUnitB(LambdaUnit):
+            _model_name = self.model_name
+
+        self.backend.remove_service_class(LambdaUnit)
+        self.backend.remove_service_class(LambdaUnitB)
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name)
+        self.assertIsNone(matching_cls)
