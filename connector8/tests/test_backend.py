@@ -162,7 +162,7 @@ class test_backend_service_registry(common.TransactionCase):
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
-    def test_get_class_installed_module(self):
+    def test_get_class_not_installed_module(self):
         """ Only class from an installed module should be returned """
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
@@ -214,10 +214,6 @@ class test_backend_service_registry(common.TransactionCase):
             _model_name = self.model_name
 
         class LambdaNoUnit(LambdaUnit):
-            _model_name = self.model_name
-
-        @self.backend
-        class LambdaYesUnit(LambdaUnit):
             _model_name = self.model_name
 
         # trick the origin of the class, let it think
@@ -318,4 +314,3 @@ class test_backend_service_registry(common.TransactionCase):
         matching_cls = self.backend.get_service_class(
             LambdaUnit, self.session, self.model_name)
         self.assertEqual(matching_cls, LambdaUnitB)
-
