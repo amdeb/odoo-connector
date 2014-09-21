@@ -181,7 +181,9 @@ class Backend(object):
         return matched
 
     def replace_service_class(self, replacing):
-        """ remove from class entries; add to replaced entries"""
+        """ remove a service class from class entries and
+        add it to replaced entries
+        """
 
         if not hasattr(replacing, '__contains__'):
             replacing = [replacing]

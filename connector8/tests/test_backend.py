@@ -76,10 +76,10 @@ class TestBackendServiceRegistry(common.TransactionCase):
     def setUp(self):
         super(TestBackendServiceRegistry, self).setUp()
         self.service_name = 'calamitorium'
-        self.version = '1.14'
+        self.name_version = self.service_name + '1.14'
         self.model_name = 'res.users'
         self.parent = Backend(self.service_name)
-        self.backend = Backend(parent=self.parent, version=self.version)
+        self.backend = Backend(self.name_version, self.parent)
         self.session = ConnectorSession(self.cr, self.uid)
 
     def tearDown(self):
@@ -133,7 +133,6 @@ class TestBackendServiceRegistry(common.TransactionCase):
             LambdaYesUnit, self.session, self.model_name
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
-
 
     def test_get_service_class_for_subclass(self):
         """ search subclass when both base and sub registered """
