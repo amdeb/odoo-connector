@@ -98,8 +98,6 @@ class test_backend_service_registry(common.TransactionCase):
     def tearDown(self):
         super(test_backend_service_registry, self).tearDown()
         Backend._clear_backend_registry()
-        del self.parent._class_entries[:]
-        del self.backend._class_entries[:]
 
     def test_register_service_class(self):
         """get the registered service class"""
@@ -218,6 +216,10 @@ class test_backend_service_registry(common.TransactionCase):
         class LambdaNoUnit(LambdaUnit):
             _model_name = self.model_name
 
+        @self.backend
+        class LambdaYesUnit(LambdaUnit):
+            _model_name = self.model_name
+
         # trick the origin of the class, let it think
         # that it comes from the Odoo module 'not installed module'
         LambdaNoUnit.odoo_module_name = 'not installed module'
@@ -249,19 +251,26 @@ class test_backend_service_registry(common.TransactionCase):
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_class_replacing_self(self):
-        """ A class should not be able to replace itself """
+        """ Replacing oneself adds one as the last registered"""
+
         class LambdaUnit(ConnectorUnit):
             _model_name = self.model_name
 
         @self.backend
-        class LambdaRecurseUnit(LambdaUnit):
+        class LambdaRecursiveUnit(LambdaUnit):
             _model_name = self.model_name
 
-        self.backend.register_service_class(
-            LambdaRecurseUnit, replacing=LambdaRecurseUnit
-        )
+        @self.backend
+        class LambdaUnitA(LambdaUnit):
+            _model_name = self.model_name
 
-        self.assertEqual(0, len(self.backend._class_entries[0].replaced_by))
+        @self.backend(replacing=LambdaRecursiveUnit)
+        class LambdaRecursiveUnit(LambdaUnit):
+            _model_name = self.model_name
+
+        matching_cls = self.backend.get_service_class(
+            LambdaUnit, self.session, self.model_name)
+        self.assertEqual(matching_cls, LambdaRecursiveUnit)
 
     def test_get_class_not_existing_model(self):
         """Not found should return None for unmatched model name"""

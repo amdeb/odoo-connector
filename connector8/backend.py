@@ -168,6 +168,7 @@ class Backend(object):
         # a list of registered service classes
         # use a list to record the timing of registration
         self._class_entries = []
+        self._replaced_entries = []
 
         Backend._backend_registry.add(self)
 
@@ -184,14 +185,18 @@ class Backend(object):
         template = "Backend<'{0}'>"
         return template.format(self.name)
 
-    def _is_matched(self, service_class, base_class, session, model_name):
-        is_installed = session.is_module_installed(
-            service_class.odoo_module_name
-        )
-        is_subclass = issubclass(service_class, base_class)
-        is_model_matched = service_class.match(model_name)
+    def _get_matched(self, entries, base_class, session, model_name):
 
-        return is_installed and is_subclass and is_model_matched
+        for entry in entries:
+
+            is_installed = session.is_module_installed(
+                entry.odoo_module_name
+            )
+            is_subclass = issubclass(entry, base_class)
+            is_model_matched = entry.match(model_name)
+
+            if  is_installed and is_subclass and is_model_matched:
+                return entry
 
     def get_service_class(self, base_class, session, model_name):
         """ Find a matching subclass of ``base_class`` from the registered
@@ -205,21 +210,24 @@ class Backend(object):
         :type: str
         """
 
-        for entry in reversed(self._class_entries):
-            if self._is_matched(entry, base_class, session, model_name):
-                return entry
-        else:
-            return None
+        matched = self._get_matched(
+            self._class_entries, base_class, session, model_name)
+        if not matched:
+            matched = self._get_matched(
+                self._replaced_entries, base_class, session, model_name)
+        return matched
 
-    def _register_remove(self, replacing):
-        """ add entry to the replaced_by part of replacing class(es) """
+    def _register_replace(self, replacing):
+        """ remove from class entries; add to replaced entries"""
 
         if not hasattr(replacing, '__iter__'):
             replacing = [replacing]
 
-        self._class_entries = [
-            item for item in self._class_entries if item not in replacing
-        ]
+        for replaced in replacing:
+            if replaced in self._class_entries:
+                self._class_entries.remove(replaced)
+            if replaced not in self._replaced_entries:
+                self._replaced_entries.insert(0, replaced)
 
     def register_service_class(self, service_class, replacing=None):
         """ Register a class in the backend.
@@ -231,9 +239,12 @@ class Backend(object):
         """
 
         if replacing:
-            self._register_remove(replacing)
+            self._register_replace(replacing)
 
-        self._class_entries.append(service_class)
+        if service_class in self._class_entries:
+            return
+
+        self._class_entries.insert(0, service_class)
 
     def __call__(self, service_class=None, replacing=None):
         """ Backend decorator used to register a backend ConnectorUnit class
