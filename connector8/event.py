@@ -118,7 +118,7 @@ class Event(object):
 
     def _consumers_for(self, model_name):
         return (cons for cons in self._consumers.get(model_name, set())
-                if cons.is_installed())
+                if cons.is_module_installed())
 
     def fire(self, model_name, *args, **kwargs):
         """ Call each consumer subscribed on the event with the given
