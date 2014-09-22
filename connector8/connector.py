@@ -20,7 +20,10 @@
 ##############################################################################
 
 import inspect
+import threading
+
 from openerp.models import MetaModel, AbstractModel
+from openerp.modules.registry import RegistryManager
 
 INSTALLED_MODEL_NAME_POSTFIX = ".installed"
 
@@ -116,6 +119,8 @@ class MetaConnectorUnit(type):
     def __init__(cls, name, bases, attrs):
         super(MetaConnectorUnit, cls).__init__(name, bases, attrs)
         cls.odoo_module_name = get_odoo_module(cls)
+        db_name = threading.current_thread().dbname
+        cls.odoo_pool = RegistryManager.get(db_name)
 
 
 class ConnectorUnit(object):
@@ -169,19 +174,11 @@ class ConnectorUnit(object):
 
         return model_name in cls.model_name
 
-    def is_module_installed(self):
-        """ Indicates whether a module is installed or not
-        on the current database.
-
-        Use a convention established for the connectors addons:
-        To know if a module is installed, it looks if an (abstract)
-        model with name ``module_name.installed`` is loaded in the
-        registry.
-        """
-
-        installed_model_name = (self.odoo_module_name +
+    @classmethod
+    def is_module_installed(cls):
+        installed_model_name = (cls.odoo_module_name +
                                 INSTALLED_MODEL_NAME_POSTFIX)
-        return bool(self.session.pool.get(installed_model_name))
+        return bool(cls.odoo_pool.get(installed_model_name))
 
     def get_connector_unit_for_model(self, connector_unit_class, model=None):
         """ Use the current :py:class:`connector.Environment` to
@@ -216,13 +213,6 @@ class ConnectorUnit(object):
 
 class Environment(object):
     """ Environment used by different units for synchronization.
-
-    .. attribute:: backend
-
-        Current backend we are working with.
-        Obtained with ``backend_record.get_backend()``.
-
-        Instance of: :py:class:`backend.Backend`
 
     .. attribute:: backend_record
 
