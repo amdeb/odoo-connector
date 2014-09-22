@@ -120,18 +120,17 @@ class Backend(object):
         :type default: Backend
         """
 
-        for backend in Backend._backend_registry:
-            if backend.name == name:
-                return backend
-        else:
-            return default
+        search = (backend for backend in Backend._backend_registry
+                  if backend.name == name)
+        return next(search, default)
 
-    def __init__(self, name, parent=None):
+    def _validate_params(self, name, parent):
         if not isinstance(name, basestring):
             raise ValueError('A backend name (a string) is expected')
         if parent and not isinstance(parent, self.__class__):
             raise ValueError('A parent must be an instance of Backend')
 
+    def _init_instance_attributes(self, name, parent):
         self.name = name
         self.parent = parent
 
@@ -140,6 +139,9 @@ class Backend(object):
         # a list of replaced classes that are search after normal classes
         self._replaced_entries = []
 
+    def __init__(self, name, parent=None):
+        self._validate_params(name, parent)
+        self._init_instance_attributes(name, parent)
         Backend._backend_registry.add(self)
 
     def __eq__(self, other):
@@ -152,33 +154,35 @@ class Backend(object):
         template = "<{0}: {1} {2}>"
         return template.format(self.__class__, self.name, self.parent)
 
+    def _is_matched(self, entry, base_class, session, model_name):
+        is_installed = session.is_module_installed(
+            entry.odoo_module_name)
+        is_subclass = issubclass(entry, base_class)
+        is_model_matched = entry.match(model_name)
+
+        return is_installed and is_subclass and is_model_matched
+
     def _get_matched(self, entries, base_class, session, model_name):
-
-        for entry in entries:
-            is_installed = session.is_module_installed(
-                entry.odoo_module_name
-            )
-            is_subclass = issubclass(entry, base_class)
-            is_model_matched = entry.match(model_name)
-
-            if is_installed and is_subclass and is_model_matched:
-                return entry
+        search = (
+            entry for entry in entries
+            if self._is_matched(entry, base_class, session, model_name)
+        )
+        return next(search, None)
 
     def _get_service_class(self, base_class, session, model_name):
-        """ Find a matching subclass of ``base_class`` from the registered
-        service classes.If not found, try replaced service classes
-        """
+        """ Find a matching subclass from both entries"""
 
-        matched = self._get_matched(
-            self._class_entries, base_class, session, model_name)
-        if not matched:
-            matched = self._get_matched(
-                self._replaced_entries, base_class, session, model_name)
-        return matched
+        return (
+            self._get_matched(
+                self._class_entries, base_class,
+                session, model_name)
+            or self._get_matched(
+                self._replaced_entries, base_class,
+                session, model_name)
+        )
 
     def get_service_class(self, base_class, session, model_name):
-        """ Find a matching subclass of ``base_class`` from the registered
-        service classes.If not found, try parent.
+        """ Find a matching class from here and parent.
 
         :param base_class: class (and its subclass) to search in the registry
         :type base_class: :py:class:`connector.ConnectorUnit`
@@ -195,9 +199,7 @@ class Backend(object):
         return matched
 
     def replace_service_class(self, replacing):
-        """ remove a service class from class entries and
-        add it to replaced entries
-        """
+        """ move a service class to replaced entries"""
 
         if not hasattr(replacing, '__contains__'):
             replacing = [replacing]
