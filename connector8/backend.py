@@ -17,21 +17,19 @@ class Backend(object):
 
         A parent backend of a backend. It is optional.
 
-    The Backend structure is rather simple.
+    The Backend functions are rather simple.
 
     * The Backend maintains a registry of all backends that
         can be searched using static class method
-        :py:meth:`Backend.get_backend`
-    * A ``Backend`` instance holds a registry of
-        service classes that are sub class of the
-        :py:class:`connector.ConnectorUnit` class
-    * It returns an installed service class
-        for a specified base class and a model name
+        :py:meth:`Backend.get_backend`.
+    * A backend can have an optional `parent` backend.
+    * A backend has two list of service classes: a normal list and
+        a replaced list. All service classes in normal list are searched
+        before those in the replaced list.
     * When a service class is not found in a backend,
-        the backend's `parent` will be searched if the backend
-        has a parent defined. The search goes up to the backend parent
-        chain until a service class is found or no parent is available.
-
+        the backend's `parent` will be searched.
+    * The service class can be replaced into the replaced list or
+        can be removed from all lists.
 
     For exmaple, let's say we have theses backend versions::
 
@@ -53,7 +51,7 @@ class Backend(object):
 
     In the graph above, ``<Magento>`` can bu used to hold all the
     service classes shared between all its child versions.
-    When serach a service class, the current backend is searched. If
+    When search a service class, the current backend is searched. If
     the current backend doesn't have the service class, parent backend
     will be searched.
 
@@ -110,9 +108,7 @@ class Backend(object):
 
     @staticmethod
     def get_backend(name, default=None):
-        """ Return an instance of :py:class:`backend.Backend`
-        for a ``name``. If not found, return default or
-        None if no default specified
+        """ Return an instance for a ``name``.
 
         :param name: name of the service to return
         :type name: str
@@ -238,7 +234,7 @@ class Backend(object):
         self._class_entries.insert(0, service_class)
 
     def __call__(self, service_class=None, replacing=None):
-        """ Backend decorator used to register a backend ConnectorUnit class
+        """ Backend decorator used to register a service class
 
         For a backend ``magento`` declared like this::
 
