@@ -169,6 +169,20 @@ class ConnectorUnit(object):
 
         return model_name in cls.model_name
 
+    def is_module_installed(self):
+        """ Indicates whether a module is installed or not
+        on the current database.
+
+        Use a convention established for the connectors addons:
+        To know if a module is installed, it looks if an (abstract)
+        model with name ``module_name.installed`` is loaded in the
+        registry.
+        """
+
+        installed_model_name = (self.odoo_module_name +
+                                INSTALLED_MODEL_NAME_POSTFIX)
+        return bool(self.session.pool.get(installed_model_name))
+
     def get_connector_unit_for_model(self, connector_unit_class, model=None):
         """ Use the current :py:class:`connector.Environment` to
         search and return an instance of the
@@ -263,20 +277,6 @@ class Environment(object):
         connector_unit_class = self.backend.get_class(
             base_class, self.session, self.model_name)
         return connector_unit_class(self)
-
-    def is_module_installed(self):
-        """ Indicates whether a module is installed or not
-        on the current database.
-
-        Use a convention established for the connectors addons:
-        To know if a module is installed, it looks if an (abstract)
-        model with name ``module_name.installed`` is loaded in the
-        registry.
-        """
-
-        installed_model_name = (self.odoo_module_name +
-                                INSTALLED_MODEL_NAME_POSTFIX)
-        return bool(self.pool.get(installed_model_name))
 
 
 class Binder(ConnectorUnit):
