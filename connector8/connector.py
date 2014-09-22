@@ -42,6 +42,7 @@ def _get_odoo_module_name(module_path):
         module_name = module_parts[0]
     return module_name
 
+
 def install_in_connector():
     """ Installs an Odoo module in the ``Connector`` framework.
 
@@ -276,6 +277,7 @@ class Environment(object):
         installed_model_name = (self.odoo_module_name +
                                 INSTALLED_MODEL_NAME_POSTFIX)
         return bool(self.pool.get(installed_model_name))
+
 
 class Binder(ConnectorUnit):
     """ For one record of a model, capable to find an external or

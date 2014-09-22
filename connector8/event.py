@@ -134,8 +134,7 @@ class Event(object):
         :param kwargs: keyword arguments propagated to the consumer
         """
         assert isinstance(model_name, basestring), (
-            "Second argument must be the model name as string, "
-            "instead received: %s" % model_name)
+            "Model name is not a string.  " +  model_name)
         args = tuple([model_name] + list(args))
         for name in (None, model_name):
             for consumer in self._consumers_for(name):

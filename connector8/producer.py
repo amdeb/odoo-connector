@@ -34,18 +34,12 @@ import logging
 
 from openerp import models, api
 
-from .session import ConnectorSession
 from .event import (on_record_create,
                     on_record_write,
                     on_record_unlink)
 
 
 _logger = logging.getLogger(__name__)
-
-
-def _is_connector_installed(self):
-    return self.pool.get('connector8.installed') is not None
-
 
 create_original = models.BaseModel.create
 write_original = models.BaseModel.write
@@ -61,10 +55,7 @@ def create(self, values):
     :return: the newly created record
     """
     record = create_original(self, values)
-    if _is_connector_installed(self):
-        session = ConnectorSession(self.env.cr, self.env.uid,
-                                   context=self.env.context)
-        on_record_create.fire(session, self._name, record)
+    on_record_create.fire(self._name, record)
     return record
 
 models.BaseModel.create = create
@@ -73,13 +64,11 @@ models.BaseModel.create = create
 @api.multi
 def write(self, values):
     write_original(self, values)
-    if _is_connector_installed(self):
-        session = ConnectorSession(self.env.cr, self.env.uid,
-                                   context=self.env.context)
-        if on_record_write.has_consumer_for(session, self._name):
-            for record_id in self._ids:
-                on_record_write.fire(session, self._name,
-                                     record_id, values)
+
+    if on_record_write.has_consumer_for(self._name):
+        for record_id in self._ids:
+            on_record_write.fire(self._name, record_id, values)
+
     return True
 
 models.BaseModel.write = write
@@ -87,14 +76,14 @@ models.BaseModel.write = write
 
 def unlink(self, cr, uid, ids, context=None):
     unlink_original(self, cr, uid, ids, context=context)
-    if _is_connector_installed(self):
-        if isinstance(ids, (int, long)):
-            ids = [ids]
 
-        session = ConnectorSession(cr, uid, context=context)
-        if on_record_unlink.has_consumer_for(session, self._name):
-            for record_id in ids:
-                on_record_unlink.fire(session, self._name, record_id)
+    if not hasattr(ids, '__contains__'):
+        ids = [ids]
+
+    if on_record_unlink.has_consumer_for(self._name):
+        for record_id in ids:
+            on_record_unlink.fire(self._name, record_id)
+
     return True
 
 models.BaseModel.unlink = unlink
