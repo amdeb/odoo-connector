@@ -73,9 +73,9 @@ class Backend(object):
     Here, the called on :py:meth:`~get_service_class` of ``magento1700``
     would return::
 
-        magento1700.get_service_class(Synchronizer, session, 'res.partner')
+        magento1700.get_service_class(Synchronizer, 'res.partner')
         # => Synchronizer1700
-        magento1700.get_service_class(Mapper, session, 'res.partner')
+        magento1700.get_service_class(Mapper, 'res.partner')
         # => Mapper
 
     ..note:: :py:meth:the `~get_serivce_class` search most recently
@@ -150,48 +150,42 @@ class Backend(object):
         template = "<{0}: {1} {2}>"
         return template.format(self.__class__, self.name, self.parent)
 
-    def _is_matched(self, entry, base_class, session, model_name):
-        is_installed = session.is_module_installed(
-            entry.odoo_module_name)
+    def _is_matched(self, entry, base_class, model_name):
+        is_installed = entry.is_module_installed()
         is_subclass = issubclass(entry, base_class)
         is_model_matched = entry.match(model_name)
 
         return is_installed and is_subclass and is_model_matched
 
-    def _get_matched(self, entries, base_class, session, model_name):
+    def _get_matched(self, entries, base_class, model_name):
         search = (
             entry for entry in entries
-            if self._is_matched(entry, base_class, session, model_name)
+            if self._is_matched(entry, base_class, model_name)
         )
         return next(search, None)
 
-    def _get_service_class(self, base_class, session, model_name):
+    def _get_service_class(self, base_class, model_name):
         """ Find a matching subclass from both entries"""
 
         return (
-            self._get_matched(
-                self._class_entries, base_class,
-                session, model_name)
+            self._get_matched(self._class_entries, base_class, model_name)
             or self._get_matched(
-                self._replaced_entries, base_class,
-                session, model_name)
+                self._replaced_entries, base_class, model_name)
         )
 
-    def get_service_class(self, base_class, session, model_name):
+    def get_service_class(self, base_class, model_name):
         """ Find a matching class from here and parent.
 
         :param base_class: class (and its subclass) to search in the registry
         :type base_class: :py:class:`connector.ConnectorUnit`
-        :param session: current session
-        :type session: :py:class:`session.ConnectorSession`
         :param model_name: the model name to search for
         :type: str
         """
 
-        matched = self._get_service_class(base_class, session, model_name)
+        matched = self._get_service_class(base_class, model_name)
         if not matched and self.parent:
             matched = self.parent.get_service_class(
-                base_class, session, model_name)
+                base_class, model_name)
         return matched
 
     def replace_service_class(self, replacing):

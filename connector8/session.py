@@ -188,14 +188,3 @@ class ConnectorSession(object):
 
     def __repr__(self):
         return '<Session db_name: %s, uid: %d>' % (self.cr.dbname, self.uid)
-
-    def is_module_installed(self, module_name):
-        """ Indicates whether a module is installed or not
-        on the current database.
-
-        Use a convention established for the connectors addons:
-        To know if a module is installed, it looks if an (abstract)
-        model with name ``module_name.installed`` is loaded in the
-        registry.
-        """
-        return bool(self.pool.get('%s.installed' % module_name))

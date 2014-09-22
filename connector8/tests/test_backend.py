@@ -5,7 +5,6 @@ import openerp.tests.common as common
 
 from ..backend import Backend
 from ..connector import ConnectorUnit
-from ..session import ConnectorSession
 
 
 class TestBackend(unittest2.TestCase):
@@ -86,7 +85,6 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.model_name = 'res.users'
         self.parent = Backend(self.service_name)
         self.backend = Backend(self.name_version, self.parent)
-        self.session = ConnectorSession(self.cr, self.uid)
 
     def tearDown(self):
         super(TestBackendServiceRegistry, self).tearDown()
@@ -99,7 +97,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
 
         self.backend.register_service_class(BenderBinder)
         ref = self.backend.get_service_class(
-            BenderBinder, self.session, self.model_name
+            BenderBinder, self.model_name
         )
 
         self.assertEqual(ref, BenderBinder)
@@ -111,7 +109,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         ref = self.backend.get_service_class(
-            ZoidbergMapper, self.session, self.model_name
+            ZoidbergMapper, self.model_name
         )
         self.assertEqual(ref, ZoidbergMapper)
 
@@ -121,7 +119,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            FryBinder, self.session, self.model_name
+            FryBinder, self.model_name
         )
         self.assertIsNone(matching_cls)
 
@@ -136,7 +134,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaYesUnit, self.session, self.model_name
+            LambdaYesUnit, self.model_name
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
@@ -151,7 +149,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaYesUnit, self.session, self.model_name
+            LambdaYesUnit, self.model_name
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
@@ -166,7 +164,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name
+            LambdaUnit, self.model_name
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
@@ -188,7 +186,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.backend(LambdaNoUnit)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name
+            LambdaUnit, self.model_name
         )
         self.assertEqual(matching_cls, LambdaYesUnit)
 
@@ -207,7 +205,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_service_class_replacing_uninstalled_module(self):
@@ -230,7 +228,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.backend(LambdaNoUnit, replacing=LambdaYesUnit)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_service_class_replacing_two(self):
@@ -251,7 +249,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaYesUnit)
 
     def test_get_service_class_replacing_self(self):
@@ -273,7 +271,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaRecursiveUnit)
 
     def test_get_service_class_not_existing_model(self):
@@ -284,7 +282,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, 'no.res.users')
+            LambdaUnit, 'no.res.users')
         self.assertIsNone(matching_cls)
 
     def test_get_service_class_multiple_match(self):
@@ -306,7 +304,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
             _model_name = self.model_name
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaUnitB)
 
     def test_replace_service_class(self):
@@ -326,7 +324,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.backend.replace_service_class(LambdaUnitB)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaUnitA)
 
     def test_replace_service_class_searched(self):
@@ -338,7 +336,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.backend.replace_service_class(LambdaUnit)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertEqual(matching_cls, LambdaUnit)
 
     def test_remove_service_class(self):
@@ -350,7 +348,7 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.backend.remove_service_class(LambdaUnit)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertIsNone(matching_cls)
 
     def test_remove_service_class_with_replaced(self):
@@ -367,5 +365,5 @@ class TestBackendServiceRegistry(common.TransactionCase):
         self.backend.remove_service_class(LambdaUnitB)
 
         matching_cls = self.backend.get_service_class(
-            LambdaUnit, self.session, self.model_name)
+            LambdaUnit, self.model_name)
         self.assertIsNone(matching_cls)

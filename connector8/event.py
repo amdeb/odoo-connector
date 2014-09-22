@@ -20,7 +20,6 @@
 ##############################################################################
 
 from collections import Callable
-from .connector import get_odoo_module
 
 
 class Event(object):
@@ -34,18 +33,17 @@ class Event(object):
 
     An event always have at least the 2 following arguments:
 
-    * session
     * model_name
 
     Then to subscribe one or more consumers, a consumer is a function::
 
-        def do_something(session, model_name, a, b):
+        def do_something(model_name, a, b):
             print "Event was fired with arguments: %s, %s" % (a, b)
 
         # active on all models
         on_my_event.subscribe(do_something)
 
-        def do_something_product(session, model_name, a, b):
+        def do_something_product(model_name, a, b):
             print ("Event was fired on a product "
                    "with arguments: %s, %s" % (a, b))
 
@@ -55,7 +53,7 @@ class Event(object):
 
     We can also replace an event::
 
-        def do_something_product2(session, model_name, a, b):
+        def do_something_product2(model_name, a, b):
             print "Consumer 2"
             print ("Event was fired on a product "
                   "with arguments: %s, %s" % (a, b))
@@ -65,16 +63,16 @@ class Event(object):
 
     Finally, we fire the event::
 
-        on_my_event.fire(session, 'res.users', 'value_a', 'value_b')
+        on_my_event.fire('res.users', 'value_a', 'value_b')
 
     A consumer can be subscribed using a decorator::
 
         @on_my_event
-        def do_other_thing(session, model_name, a, b):
+        def do_other_thing(model_name, a, b):
             print 'foo'
 
         @on_my_event(replacing=do_other_thing)
-        def print_bar(session, model_name, a, b):
+        def print_bar(model_name, a, b):
             print 'bar'
 
     """
@@ -110,41 +108,37 @@ class Event(object):
             if name in self._consumers:
                 self._consumers[name].discard(consumer)
 
-    def has_consumer_for(self, session, model_name):
+    def has_consumer_for(self, model_name):
         """ Return True if at least one consumer is registered
         for the model.
         """
-        if any(self._consumers_for(session, None)):
+        if any(self._consumers_for(None)):
             return True  # at least 1 global consumer exist
-        return any(self._consumers_for(session, model_name))
+        return any(self._consumers_for(model_name))
 
-    def _consumers_for(self, session, model_name):
-        is_installed = session.is_module_installed
-        return (cons for cons in self._consumers.get(model_name, ())
-                if is_installed(get_odoo_module(cons)))
+    def _consumers_for(self, model_name):
+        return (cons for cons in self._consumers.get(model_name, set())
+                if cons.is_installed())
 
-    def fire(self, session, model_name, *args, **kwargs):
+    def fire(self, model_name, *args, **kwargs):
         """ Call each consumer subscribed on the event with the given
         arguments and keyword arguments.
 
         All the consumers which were subscribed globally (no model name) or
         which are subscribed on the same model
 
-        :param session: current session
-        :type session: :py:class:`connector.session.Session`
         :param model_name: name of the model
         :type model_name: str
         :param args: arguments propagated to the consumer
-                     The second argument of `args` is the model name.
-                     The first argument is the session.
+                     The first argument of `args` is the model name.
         :param kwargs: keyword arguments propagated to the consumer
         """
         assert isinstance(model_name, basestring), (
             "Second argument must be the model name as string, "
             "instead received: %s" % model_name)
-        args = tuple([session, model_name] + list(args))
+        args = tuple([model_name] + list(args))
         for name in (None, model_name):
-            for consumer in self._consumers_for(session, name):
+            for consumer in self._consumers_for(name):
                 consumer(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -185,7 +179,6 @@ on_record_write = Event()
 
 Listeners should take the following arguments:
 
- * session: :py:class:`~connector.session.ConnectorSession` object
  * model_name: name of the model
  * record_id: id of the record
  * vals:  field values of the new record, e.g {'field_name': field_value, ...}
@@ -198,7 +191,6 @@ on_record_create = Event()
 
 Listeners should take the following arguments:
 
- * session: :py:class:`~connector.session.ConnectorSession` object
  * model_name: name of the model
  * record: the newly created record
 
@@ -210,7 +202,6 @@ on_record_unlink = Event()
 
 Listeners should take the following arguments:
 
- * session: :py:class:`~connector.session.ConnectorSession` object
  * model_name: name of the model
  * record_id: id of the record
 

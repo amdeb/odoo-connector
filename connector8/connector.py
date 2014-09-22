@@ -22,10 +22,11 @@
 import inspect
 from openerp.models import MetaModel, AbstractModel
 
+INSTALLED_MODEL_NAME_POSTFIX = ".installed"
+
 
 def _get_odoo_module_name(module_path):
-    """ Extract the name of the Odoo module from the path of the
-    Python module.
+    """ Extract the odoo module name -- the first part of an addon name
 
     Taken from Odoo server: ``openerp.models``
 
@@ -41,31 +42,26 @@ def _get_odoo_module_name(module_path):
         module_name = module_parts[0]
     return module_name
 
-
 def install_in_connector():
     """ Installs an Odoo module in the ``Connector`` framework.
 
-    It has to be called once per Odoo module to plug.
+    It has to be called once per Odoo module to be found by connector.
 
-    Under the cover, it creates a subclass of ``AbstractModel``.
-    The model class name has a ``.intalled`` suffix:
-    ``{name_of_the_odoo_module_to_install}.installed``.
+    Under the cover, it creates a an abstract model whose _name
+    is ``{name_of_the_odoo_module_to_install}.installed``.
 
-    The model class name is the model name with ``.`` replaced by ``_``.
-    MetaModal saves a record of {model._module: model} in
-    module_to_models attribute that can be accessed from
-    all model class (not from an instance of a model class).
-
-    The connector then uses this model to know when the Odoo module
+    The connector uses this abastract model to know when the Odoo module
     is installed or not and whether it should use the ConnectorUnit
     classes of this module or not and whether it should fire the
     consumers of events or not.
     """
+
     # Get the module of the caller
-    module = inspect.getmodule(inspect.currentframe().f_back)
-    odoo_module_name = _get_odoo_module_name(module.__name__)
+    caller_module_name = inspect.currentframe().f_back.f_globals["__name__"]
+
+    odoo_module_name = _get_odoo_module_name(caller_module_name)
     # Build a new AbstractModel with the name of the module and the suffix
-    name = "%s.installed" % odoo_module_name
+    name = odoo_module_name + INSTALLED_MODEL_NAME_POSTFIX
     class_name = name.replace('.', '_')
     # we need to call __new__ and __init__ in 2 phases because
     # __init__ needs to have the right __module__ and _module attributes
@@ -73,7 +69,7 @@ def install_in_connector():
                               (AbstractModel,), {'_name': name})
     # Update the module of the model, it should be the caller's one
     model._module = odoo_module_name
-    model.__module__ = module.__name__
+    model.__module__ = caller_module_name
     MetaModel.__init__(model, class_name,
                        (AbstractModel,), {'_name': name})
 
@@ -267,6 +263,19 @@ class Environment(object):
             base_class, self.session, self.model_name)
         return connector_unit_class(self)
 
+    def is_module_installed(self):
+        """ Indicates whether a module is installed or not
+        on the current database.
+
+        Use a convention established for the connectors addons:
+        To know if a module is installed, it looks if an (abstract)
+        model with name ``module_name.installed`` is loaded in the
+        registry.
+        """
+
+        installed_model_name = (self.odoo_module_name +
+                                INSTALLED_MODEL_NAME_POSTFIX)
+        return bool(self.pool.get(installed_model_name))
 
 class Binder(ConnectorUnit):
     """ For one record of a model, capable to find an external or
