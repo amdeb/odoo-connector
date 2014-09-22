@@ -31,7 +31,7 @@ class test_producers(common.TransactionCase):
         Create a record and check if the event is called
         """
         @on_record_create(model_names='res.partner')
-        def event(session, model_name, record):
+        def event(model_name, record):
             self.recipient.record_id = record.id
             self.recipient.name = record.name
 
@@ -45,7 +45,7 @@ class test_producers(common.TransactionCase):
         Write on a record and check if the event is called
         """
         @on_record_write(model_names='res.partner')
-        def event(session, model_name, record_id, values=None):
+        def event(model_name, record_id, values=None):
             self.recipient.record_id = record_id
             self.recipient.values = values
 
@@ -65,7 +65,7 @@ class test_producers(common.TransactionCase):
         Unlink a record and check if the event is called
         """
         @on_record_unlink(model_names='res.partner')
-        def event(session, model_name, record_id):
+        def event(model_name, record_id):
                 self.recipient.record_id = record_id
 
         unlink_id = self.partner_unlink.id
