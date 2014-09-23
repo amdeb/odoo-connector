@@ -144,7 +144,7 @@ class test_event(common.TransactionCase):
         # Here func is considered to be in a uninstalled module
         # because its module name is Mock
         func = mock.MagicMock()
-        mock_prop = mock.PropertyMock(side_effect=ValueError)
+        mock_prop = mock.PropertyMock(return_value=None)
         type(func).odoo_module_name = mock_prop
         func.side_effect = Exception('Should not be called')
         self.event(func)
