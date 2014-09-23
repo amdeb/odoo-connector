@@ -2,6 +2,8 @@
 
 from functools import partial
 
+from connector8 import utility
+
 
 class Backend(object):
     """ A backend represents a system to be integrated with,
@@ -151,7 +153,7 @@ class Backend(object):
         return template.format(self.__class__, self.name, self.parent)
 
     def _is_matched(self, entry, base_class, model_name):
-        is_installed = entry.is_module_installed()
+        is_installed = utility.is_module_installed(entry)
         is_subclass = issubclass(entry, base_class)
         is_model_matched = entry.match(model_name)
 

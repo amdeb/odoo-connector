@@ -21,6 +21,8 @@
 
 from collections import Callable
 
+from connector8 import utility
+
 
 class Event(object):
     """ An event contains consumers called when the event is fired.
@@ -86,7 +88,7 @@ class Event(object):
         :param consumer: the function to register on the event
         :param model_names: the consumer will be active only on these models,
             active on all models if ``None``
-        :param replacing: the function beeing replaced by this new one.
+        :param replacing: the function being replaced by this new one.
         """
         if replacing is not None:
             self.unsubscribe(replacing, model_names=model_names)
@@ -118,7 +120,7 @@ class Event(object):
 
     def _consumers_for(self, model_name):
         return (cons for cons in self._consumers.get(model_name, set())
-                if cons.is_module_installed())
+                if utility.is_module_installed(cons))
 
     def fire(self, model_name, *args, **kwargs):
         """ Call each consumer subscribed on the event with the given
@@ -180,7 +182,8 @@ Listeners should take the following arguments:
 
  * model_name: name of the model
  * record_id: id of the record
- * vals:  field values of the new record, e.g {'field_name': field_value, ...}
+ * values:  field values of the new record,
+   e.g {'field_name': field_value, ...}
 
 """
 
