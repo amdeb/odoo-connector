@@ -70,8 +70,8 @@ class TestBackend(unittest2.TestCase):
 
     def test_backend_repr(self):
         backend = Backend(self.name)
-        expected = "<{0}: {1} {2}>".format(
-            backend.__class__, self.name, None)
+        expected = "{0}({1}, {2})".format(
+            type(backend).__name__, self.name, None)
         self.assertEqual(expected, repr(backend))
 
 

@@ -4,8 +4,6 @@ import threading
 from openerp.models import MetaModel, AbstractModel
 from openerp.modules.registry import RegistryManager
 
-from openerp.modules.registry import RegistryManager
-
 INSTALLED_MODEL_NAME_POSTFIX = ".installed"
 
 

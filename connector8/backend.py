@@ -2,7 +2,7 @@
 
 from functools import partial
 
-from connector8 import utility
+from . import utility
 
 
 class Backend(object):
@@ -149,8 +149,8 @@ class Backend(object):
         return False
 
     def __repr__(self):
-        template = "<{0}: {1} {2}>"
-        return template.format(self.__class__, self.name, self.parent)
+        template = "{0}({1}, {2})"
+        return template.format(type(self).__name__, self.name, self.parent)
 
     def _is_matched(self, entry, base_class, model_name):
         is_installed = utility.is_module_installed(entry)
