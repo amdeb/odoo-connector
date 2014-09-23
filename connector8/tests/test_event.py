@@ -139,9 +139,13 @@ class test_event(common.TransactionCase):
         def consumer1(model_name):
             pass
         # devious way to test it: the __module__ of a mock is 'mock'
-        # and we use __module__ to know the module of the event
-        # so, here func is considered to be in a uninstalled module
-        func = mock.Mock()
+        # and we use odoo_module_name attribute of the consumer
+        # thus set it as not existed
+        # Here func is considered to be in a uninstalled module
+        # because its module name is Mock
+        func = mock.MagicMock()
+        mock_prop = mock.PropertyMock(side_effect=ValueError)
+        type(func).odoo_module_name = mock_prop
         func.side_effect = Exception('Should not be called')
         self.event(func)
         self.event.fire('res.users')

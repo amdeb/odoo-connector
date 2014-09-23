@@ -116,8 +116,7 @@ class Event(object):
                      The first argument of `args` is the model name.
         :param kwargs: keyword arguments propagated to the consumer
         """
-        assert isinstance(model_name, basestring), (
-            "Model name is not a string.  " + model_name)
+
         args = tuple([model_name] + list(args))
         for name in (None, model_name):
             for consumer in self._consumers_for(name):

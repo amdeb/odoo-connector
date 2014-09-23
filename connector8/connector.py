@@ -170,8 +170,8 @@ class Environment(object):
         :type base_class: :py:class:`connector.connector.ConnectorUnit`
         """
 
-        connector_unit_class = self.backend.get_class(
-            base_class, self.session, self.model_name)
+        connector_unit_class = self.backend.get_service_class(
+            base_class, self.model_name)
         return connector_unit_class(self)
 
 
