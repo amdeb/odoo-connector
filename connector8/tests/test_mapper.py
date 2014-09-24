@@ -569,4 +569,3 @@ class test_mapper_binding(common.TransactionCase):
         self.assertEqual(map_record.values(fields=['field', 'name']), expected)
         self.assertEqual(map_record.values(for_create=True,
                                            fields=['field', 'name']), expected)
-
