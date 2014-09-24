@@ -56,10 +56,10 @@ class test_mapper(unittest2.TestCase):
                                        only_create=False)
 
         self.assertEqual(KifKrokerMapper._map_methods,
-                             {'name': name_def,
-                              'email': email_def,
-                              'street': street_def,
-                              })
+                         {'name': name_def,
+                          'email': email_def,
+                          'street': street_def,
+                          })
 
     def test_mapping_decorator_cross_classes(self):
         """ Mappings should not propagate to other classes"""
@@ -88,9 +88,9 @@ class test_mapper(unittest2.TestCase):
                                      only_create=True)
 
         self.assertEqual(MomMapper._map_methods,
-                             {'name': mom_def})
+                         {'name': mom_def})
         self.assertEqual(ZappMapper._map_methods,
-                             {'email': zapp_def})
+                         {'email': zapp_def})
 
     def test_mapping_decorator_inherit(self):
         """ Mappings should inherit the ``super`` mappings """
@@ -117,8 +117,8 @@ class test_mapper(unittest2.TestCase):
         email_def = MappingDefinition(changed_by=set(('email',)),
                                       only_create=False)
         self.assertEqual(FarnsworthMapper._map_methods,
-                             {'name': name_def,
-                              'email': email_def})
+                         {'name': name_def,
+                          'email': email_def})
 
     def test_mapping_decorator_cumul_changed_by(self):
         """ Mappings should combine changed_by fields of super"""
@@ -144,7 +144,7 @@ class test_mapper(unittest2.TestCase):
                                      only_create=False)
 
         self.assertEqual(FarnsworthMapper._map_methods,
-                             {'name': name_def})
+                         {'name': name_def})
 
     def test_mapping_record(self):
         """ Map a record and check the result """
