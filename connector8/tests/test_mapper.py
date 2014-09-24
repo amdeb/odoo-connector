@@ -55,7 +55,7 @@ class test_mapper(unittest2.TestCase):
         street_def = MappingDefinition(changed_by=set(('street',)),
                                        only_create=False)
 
-        self.assertDictEqual(KifKrokerMapper._map_methods,
+        self.assertEqual(KifKrokerMapper._map_methods,
                              {'name': name_def,
                               'email': email_def,
                               'street': street_def,
@@ -87,9 +87,9 @@ class test_mapper(unittest2.TestCase):
         zapp_def = MappingDefinition(changed_by=set(('email',)),
                                      only_create=True)
 
-        self.assertDictEqual(MomMapper._map_methods,
+        self.assertEqual(MomMapper._map_methods,
                              {'name': mom_def})
-        self.assertDictEqual(ZappMapper._map_methods,
+        self.assertEqual(ZappMapper._map_methods,
                              {'email': zapp_def})
 
     def test_mapping_decorator_inherit(self):
@@ -116,7 +116,7 @@ class test_mapper(unittest2.TestCase):
                                      only_create=False)
         email_def = MappingDefinition(changed_by=set(('email',)),
                                       only_create=False)
-        self.assertDictEqual(FarnsworthMapper._map_methods,
+        self.assertEqual(FarnsworthMapper._map_methods,
                              {'name': name_def,
                               'email': email_def})
 
@@ -143,7 +143,7 @@ class test_mapper(unittest2.TestCase):
         name_def = MappingDefinition(changed_by=set(('name', 'city', 'email')),
                                      only_create=False)
 
-        self.assertDictEqual(FarnsworthMapper._map_methods,
+        self.assertEqual(FarnsworthMapper._map_methods,
                              {'name': name_def})
 
     def test_mapping_record(self):
@@ -163,7 +163,7 @@ class test_mapper(unittest2.TestCase):
         map_record = mapper.map_record(record)
         expected = {'out_name': 'Guewen',
                     'out_street': 'STREET'}
-        self.assertDictEqual(map_record.values(), expected)
+        self.assertEqual(map_record.values(), expected)
         self.assertEqual(map_record.values(for_create=True), expected)
 
     def test_mapping_record_on_create(self):
