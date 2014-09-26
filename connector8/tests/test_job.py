@@ -237,7 +237,7 @@ class test_job_storage_multi_company(common.TransactionCase):
         self.pool = openerp.modules.registry.RegistryManager.get(common.DB)
         self.session = ConnectorSession(self.cr, self.uid, context={})
         self.queue_job = self.registry('queue.job')
-        grp_connector_manager = self.ref("connector.group_connector_manager")
+        grp_connector_manager = self.ref("connector8.group_connector_manager")
         User = self.registry('res.users')
         Company = self.registry('res.company')
         Partner = self.registry('res.partner')
