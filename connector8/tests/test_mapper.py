@@ -402,7 +402,7 @@ class test_mapper_binding(common.TransactionCase):
         self.env = Environment(backend_record, self.session, 'res.partner')
         self.country_binder = mock.Mock(name='country_binder')
         self.country_binder.return_value = self.country_binder
-        self.backend.get_class.return_value = self.country_binder
+        self.backend.get_service_class.return_value = self.country_binder
 
     def test_mapping_m2o_to_backend(self):
         """ Map a direct record with the m2o_to_backend modifier function """
