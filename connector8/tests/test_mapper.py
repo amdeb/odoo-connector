@@ -429,11 +429,11 @@ class test_mapper_binding(common.TransactionCase):
             direct = [(backend_to_m2o('country'), 'country_id')]
 
         record = {'country': 10}
-        self.country_binder.to_openerp.return_value = 44
+        self.country_binder.to_odoo.return_value = 44
         mapper = MyMapper(self.env)
         map_record = mapper.map_record(record)
         self.assertEqual(map_record.values(), {'country_id': 44})
-        self.country_binder.to_openerp.assert_called_once_with(
+        self.country_binder.to_odoo.assert_called_once_with(
             10, unwrap=False)
 
     def test_mapping_record_children_no_map_child(self):

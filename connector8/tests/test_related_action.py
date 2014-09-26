@@ -101,7 +101,7 @@ class TestRelatedAction(unittest2.TestCase):
         backend_record = mock.Mock(name='backend_record')
         backend = mock.Mock(name='backend')
         browse_record = mock.Mock(name='browse_record')
-        backend.get_class.return_value = TestBinder
+        backend.get_service_class.return_value = TestBinder
         backend_record.get_backend.return_value = backend
         browse_record.exists.return_value = True
         browse_record.backend_id = backend_record

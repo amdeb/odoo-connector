@@ -210,7 +210,7 @@ def backend_to_m2o(field, binding=None, with_inactive=False):
         # we ask the unwrapped id to the binder
         unwrap = bool(binding)
         with self.session.change_context({'active_test': False}):
-            value = binder.to_openerp(rel_id, unwrap=unwrap)
+            value = binder.to_odoo(rel_id, unwrap=unwrap)
         if not value:
             raise MappingError("Can not find an existing %s for external "
                                "record %s %s unwrapping" %

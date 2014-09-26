@@ -184,7 +184,7 @@ class Binder(ConnectorUnit):
 
     _model_name = None  # define in sub-classes
 
-    def to_openerp(self, external_id, unwrap=False):
+    def to_odoo(self, external_id, unwrap=False):
         """ Give the Odoo ID for an external ID
 
         :param external_id: external ID for which we want
