@@ -142,7 +142,7 @@ class Environment(object):
         :param backend_record: browse record of the backend
         :type backend_record: :py:class:`openerp.osv.orm.browse_record`
         :param session: current session (cr, uid, context)
-        :type session: :py:class:`connector.session.ConnectorSession`
+        :type session: :py:class:`connector8.session.ConnectorSession`
         :param model_name: name of the model
         :type model_name: str
         """
@@ -167,7 +167,7 @@ class Environment(object):
         The returned instance is built with ``self`` for its environment.
 
         :param base_class: ``ConnectorUnit`` to search (class or subclass)
-        :type base_class: :py:class:`connector.connector.ConnectorUnit`
+        :type base_class: :py:class:`connector8.connector.ConnectorUnit`
         """
 
         connector_unit_class = self.backend.get_service_class(

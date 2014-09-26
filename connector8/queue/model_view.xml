@@ -59,13 +59,13 @@
                             class="oe_highlight"
                             string="Requeue Job"
                             type="object"
-                            groups="connector.group_connector_manager"/>
+                            groups="connector8.group_connector_manager"/>
                         <button name="button_done"
                             states="pending,enqueued,failed"
                             class="oe_highlight"
                             string="Set to 'Done'"
                             type="object"
-                            groups="connector.group_connector_manager"/>
+                            groups="connector8.group_connector_manager"/>
                         <button name="open_related_action"
                             string="Related"
                             type="object"

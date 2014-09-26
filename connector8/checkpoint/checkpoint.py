@@ -149,7 +149,7 @@ class connector_checkpoint(models.Model):
     def _subscribe_users(self, ids):
         """ Subscribe all users having the 'Connector Manager' group """
         group_ref = self.env['ir.model.data'].get_object_reference(
-            self.cr, self.uid, 'connector', 'group_connector_manager')
+            self.cr, self.uid, 'connector8', 'group_connector_manager')
         if not group_ref:
             return
         group_id = group_ref[1]

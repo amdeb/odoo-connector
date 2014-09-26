@@ -326,7 +326,7 @@ class test_job_storage_multi_company(common.TransactionCase):
 
     def test_job_subscription(self):
         # if the job is created without company_id, all members of
-        # connector.group_connector_manager must be followers
+        # connector8.group_connector_manager must be followers
         User = self.registry("res.users")
         with self.session.change_context({'company_id': None}):
             stored_brw = self._create_job()
@@ -334,7 +334,7 @@ class test_job_storage_multi_company(common.TransactionCase):
         stored_brw.refresh()
         user_ids = User.search(
             self.cr, self.uid,
-            [('groups_id', '=', self.ref('connector.group_connector_manager'))]
+            [('groups_id', '=', self.ref('connector8.group_connector_manager'))]
         )
         self.assertEqual(len(stored_brw.message_follower_ids), len(user_ids))
         users = self.registry("res.users").browse(self.cr, self.uid, user_ids)

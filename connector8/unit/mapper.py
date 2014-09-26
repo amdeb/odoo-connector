@@ -295,7 +295,7 @@ class MapChild(ConnectorUnit):
       backend (as seen above with ``(0, 0, {values})``
 
     A MapChild can be extended like any other
-    :py:class:`~connector.connector.ConnectorUnit`. However, it is
+    :py:class:`~connector.connector8.ConnectorUnit`. However, it is
     not mandatory to explicitly create a MapChild for each children
     mapping, the default one will be used
     (:py:class:`ImportMapChild` or :py:class:`ExportMapChild`).
@@ -353,7 +353,7 @@ class MapChild(ConnectorUnit):
         It can be overridden for instance to:
 
         * Change options
-        * Use a :py:class:`~connector.connector.Binder` to know if an
+        * Use a :py:class:`~connector8.connector.Binder` to know if an
           item already exists to modify an existing item, rather than to
           add it
 
@@ -535,7 +535,7 @@ class Mapper(ConnectorUnit):
         """
 
         :param environment: current environment (backend, session, ...)
-        :type environment: :py:class:`connector.connector.Environment`
+        :type environment: :py:class:`connector8.connector.Environment`
         """
         super(Mapper, self).__init__(environment)
         self._options = None

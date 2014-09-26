@@ -607,7 +607,7 @@ def job(func):
    The ``delay()`` function of a job takes the following arguments:
 
    session
-     Current :py:class:`~openerp.addons.connector.session.ConnectorSession`
+     Current :py:class:`~connector8.session.ConnectorSession`
 
    model_name
      name of the model on which the job has something to do

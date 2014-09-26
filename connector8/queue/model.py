@@ -194,7 +194,7 @@ class QueueJob(models.Model):
     def _subscribe_users(self, cr, uid, ids, context=None):
         """ Subscribe all users having the 'Connector Manager' group """
         group_ref = self.pool.get('ir.model.data').get_object_reference(
-            cr, uid, 'connector', 'group_connector_manager')
+            cr, uid, 'connector8', 'group_connector_manager')
         if not group_ref:
             return
         group_id = group_ref[1]

@@ -533,7 +533,7 @@ msgid "Activate the public portal"
 msgstr ""
 
 #. module: connector8
-#: model:res.groups,name:connector.group_connector_manager
+#: model:res.groups,name:connector8.group_connector_manager
 msgid "Connector Manager"
 msgstr ""
 

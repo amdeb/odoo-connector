@@ -47,7 +47,7 @@ class Synchronizer(ConnectorUnit):
         The instanciation is delayed because some synchronisations do
         not need such an unit and the unit may not exist.
 
-        :rtype: :py:class:`connector.unit.mapper.Mapper`
+        :rtype: :py:class:`connector8.unit.mapper.Mapper`
         """
         if self._mapper is None:
             self._mapper = self.environment.get_connector_unit(Mapper)
@@ -60,7 +60,7 @@ class Synchronizer(ConnectorUnit):
         The instanciation is delayed because some synchronisations do
         not need such an unit and the unit may not exist.
 
-        :rtype: :py:class:`connector.unit.binder.Binder`
+        :rtype: :py:class:`connector8.unit.binder.Binder`
         """
         if self._binder is None:
             self._binder = self.get_binder_for_model()
@@ -74,7 +74,7 @@ class Synchronizer(ConnectorUnit):
         The instanciation is delayed because some synchronisations do
         not need such an unit and the unit may not exist.
 
-        :rtype: :py:class:`connector.unit.backend_adapter.BackendAdapter`
+        :rtype: :py:class:`connector8.unit.backend_adapter.BackendAdapter`
         """
         if self._backend_adapter is None:
             get_unit = self.environment.get_connector_unit
@@ -92,7 +92,7 @@ class ExportSynchronizer(Synchronizer):
         The instanciation is delayed because some synchronisations do
         not need such an unit and the unit may not exist.
 
-        :rtype: :py:class:`connector.unit.mapper.ExportMapper`
+        :rtype: :py:class:`connector8.unit.mapper.ExportMapper`
         """
         if self._mapper is None:
             self._mapper = self.environment.get_connector_unit(ExportMapper)
@@ -109,7 +109,7 @@ class ImportSynchronizer(Synchronizer):
         The instanciation is delayed because some synchronisations do
         not need such an unit and the unit may not exist.
 
-        :rtype: :py:class:`connector.unit.mapper.ImportMapper`
+        :rtype: :py:class:`connector8.unit.mapper.ImportMapper`
         """
         if self._mapper is None:
             self._mapper = self.environment.get_connector_unit(ImportMapper)
