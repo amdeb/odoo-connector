@@ -395,8 +395,7 @@ class test_mapper_binding(common.TransactionCase):
         super(test_mapper_binding, self).setUp()
         self.session = ConnectorSession(self.cr, self.uid)
         self.Partner = self.registry('res.partner')
-        self.backend = mock.Mock(spec=Backend,
-                                 wraps=Backend('x.y'),
+        self.backend = mock.Mock(wraps=Backend('x.y'),
                                  name='backend')
         backend_record = mock.Mock()
         backend_record.get_backend.return_value = self.backend

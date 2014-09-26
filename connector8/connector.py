@@ -174,10 +174,10 @@ class Environment(object):
         connector_unit_class = self.backend.get_service_class(
             base_class, self.model_name)
 
-        if not isinstance(connector_unit_class, ConnectorUnit):
+        if connector_unit_class is None:
             raise ConnectorUnitError(
-                "Wrong service class: {0} for base "
-                "class {1} and model: {2}".format(
+                "No service class find for base "
+                "class {0} and model: {1}".format(
                     connector_unit_class, base_class, self.model_name
                 ))
 
