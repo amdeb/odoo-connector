@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from . import utility
+from .exception import ConnectorUnitError
 
 # install the connector itself
 utility.install_in_connector()
@@ -172,6 +173,14 @@ class Environment(object):
 
         connector_unit_class = self.backend.get_service_class(
             base_class, self.model_name)
+
+        if not isinstance(connector_unit_class, ConnectorUnit):
+            raise ConnectorUnitError(
+                "Wrong service class: {0} for base "
+                "class {1} and model: {2}".format(
+                    connector_unit_class, base_class, self.model_name
+                ))
+
         return connector_unit_class(self)
 
 

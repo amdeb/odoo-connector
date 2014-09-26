@@ -440,7 +440,7 @@ class test_mapper_binding(common.TransactionCase):
     def test_mapping_record_children_no_map_child(self):
         """ Map a record with children, using default MapChild """
 
-        backend = Backend('backend.42', self.backend)
+        backend = Backend('backend.42')
 
         @backend
         class LineMapper(ImportMapper):
@@ -495,7 +495,7 @@ class test_mapper_binding(common.TransactionCase):
     def test_mapping_record_children(self):
         """ Map a record with children, using defined MapChild """
 
-        backend = Backend('backend.42', self.backend)
+        backend = Backend('backend.42')
 
         @backend
         class LineMapper(ImportMapper):
