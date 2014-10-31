@@ -3,11 +3,11 @@ language: python
 python:
   - "2.7"
 
-virtualenv:
-  system_site_packages: true
-
 env:
   - VERSION="8.0" ODOO_REPO="odoo/odoo"
+
+virtualenv:
+  system_site_packages: true
 
 install:
   - git clone https://github.com/OCA/maintainer-quality-tools.git ${HOME}/maintainer-quality-tools
